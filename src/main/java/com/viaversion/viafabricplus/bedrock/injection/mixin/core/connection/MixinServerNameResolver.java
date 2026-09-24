@@ -24,8 +24,8 @@ package com.viaversion.viafabricplus.bedrock.injection.mixin.core.connection;
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.injection.access.IServerAddress;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetInetSocketAddress;
-import dev.kastle.netty.channel.nethernet.config.NetherNetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Optional;
 import net.minecraft.client.multiplayer.resolver.ResolvedServerAddress;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
@@ -49,17 +49,17 @@ public abstract class MixinServerNameResolver {
 
     @Inject(method = "resolveAddress", at = @At("HEAD"), cancellable = true)
     private void resolveBedrockAddress(final ServerAddress address, final CallbackInfoReturnable<Optional<ResolvedServerAddress>> cir) {
-        final NetherNetAddress netherNetAddress = ((IServerAddress) (Object) address).viaFabricPlusBedrock$getNetherNetAddress();
+        final SocketAddress netherNetAddress = ((IServerAddress) (Object) address).viaFabricPlusBedrock$getNetherNetAddress();
         if (netherNetAddress != null) {
             cir.setReturnValue(Optional.of(new ResolvedServerAddress() {
                 @Override
                 public @NonNull String getHostName() {
-                    return netherNetAddress.getNetworkId();
+                    return netherNetAddress.toString();
                 }
 
                 @Override
                 public @NonNull String getHostIp() {
-                    return netherNetAddress.getNetworkId();
+                    return netherNetAddress.toString();
                 }
 
                 @Override

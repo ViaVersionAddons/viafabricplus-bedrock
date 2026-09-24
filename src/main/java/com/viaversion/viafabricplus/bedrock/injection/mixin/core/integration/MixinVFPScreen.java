@@ -22,6 +22,7 @@
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.screen.BedrockFriendsScreen;
 import com.viaversion.viafabricplus.bedrock.screen.BedrockRealmsScreen;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.screen.impl.ViaFabricPlusScreen;
@@ -39,7 +40,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 public abstract class MixinVFPScreen {
 
     @ModifyVariable(method = "addFooter", at = @At("HEAD"), argsOnly = true)
-    private Button[] addBedrockRealmsButton(final Button[] buttons) {
+    private Button[] addBedrockWorldButtons(final Button[] buttons) {
         if (!((Object) this instanceof ViaFabricPlusScreen)) {
             return buttons;
         }
@@ -51,11 +52,18 @@ public abstract class MixinVFPScreen {
         }
 
         final Button realms = builder.build();
+        final Button.Builder friendsBuilder = Button.builder(BedrockFriendsScreen.TITLE, _ -> new BedrockFriendsScreen().open((Screen) (Object) this));
+        if (missingAccount) {
+            friendsBuilder.tooltip(Tooltip.create(Component.translatable("bedrock_realms.viafabricplus.warning")));
+        }
+        final Button friends = friendsBuilder.build();
         // The realms screen connects to a server, which is not possible while already being connected to one
         realms.active = !missingAccount && Minecraft.getInstance().getConnection() == null;
+        friends.active = !missingAccount;
 
-        final Button[] result = Arrays.copyOf(buttons, buttons.length + 1);
+        final Button[] result = Arrays.copyOf(buttons, buttons.length + 2);
         result[buttons.length] = realms;
+        result[buttons.length + 1] = friends;
         return result;
     }
 

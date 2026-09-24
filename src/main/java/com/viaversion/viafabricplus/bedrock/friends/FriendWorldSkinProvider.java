@@ -19,25 +19,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
+package com.viaversion.viafabricplus.bedrock.friends;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import com.viaversion.viaversion.api.connection.UserConnection;
+import java.util.Map;
+import net.raphimc.viabedrock.protocol.provider.SkinProvider;
 
-/**
- * Carries a NetherNet address through vanilla's code, which only knows {@link InetSocketAddress}.
- */
-public final class NetherNetInetSocketAddress extends InetSocketAddress {
+/** Adds the host-issued session nonce to Bedrock's client data for friend worlds. */
+public final class FriendWorldSkinProvider extends SkinProvider {
 
-    private final SocketAddress netherNetAddress;
-
-    public NetherNetInetSocketAddress(final SocketAddress netherNetAddress) {
-        super("nethernet.viafabricplus.localhost", 0);
-        this.netherNetAddress = netherNetAddress;
-    }
-
-    public SocketAddress getNetherNetAddress() {
-        return this.netherNetAddress;
+    @Override
+    public Map<String, Object> getClientPlayerSkin(final UserConnection user) {
+        final Map<String, Object> claims = super.getClientPlayerSkin(user);
+        final String nonce = BedrockFriendsService.nonceFor(user.getChannel().remoteAddress());
+        if (nonce != null) {
+            claims.put("Nonce", nonce);
+        }
+        return claims;
     }
 
 }

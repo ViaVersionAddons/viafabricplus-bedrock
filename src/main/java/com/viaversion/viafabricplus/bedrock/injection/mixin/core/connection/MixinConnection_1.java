@@ -23,7 +23,7 @@ package com.viaversion.viafabricplus.bedrock.injection.mixin.core.connection;
 
 import com.viaversion.viafabricplus.injection.access.core.IConnection;
 import com.viaversion.viaversion.platform.ViaDecodeHandler;
-import dev.kastle.netty.channel.nethernet.config.NetherChannelOption;
+import org.cloudburstmc.netty.channel.nethernet.config.NetherChannelOption;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelOption;

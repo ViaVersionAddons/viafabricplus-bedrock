@@ -24,6 +24,7 @@ package com.viaversion.viafabricplus.bedrock.account;
 import com.mojang.blaze3d.Blaze3D;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
 import com.viaversion.viafabricplus.bedrock.injection.access.IConfirmScreen;
+import com.viaversion.viafabricplus.bedrock.friends.BedrockFriendsService;
 import com.viaversion.viafabricplus.bedrock.screen.BedrockRealmsScreen;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.util.JsonSave;
@@ -100,6 +101,7 @@ public final class BedrockAccount {
             account.getMinecraftMultiplayerToken().refreshIfExpired();
             account.getMinecraftCertificateChain().refreshIfExpired();
             this.account = account;
+            BedrockFriendsService.leaveCurrent();
             BedrockRealmsScreen.invalidate(); // The realms of the previous account no longer apply
 
             VFPScreen.setScreen(prevScreen);

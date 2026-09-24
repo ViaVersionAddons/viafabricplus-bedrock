@@ -29,7 +29,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
-import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.PlayerAuthInputPacketPayload_InputData;
+import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.PlayerAuthInputData;
 import net.raphimc.viabedrock.protocol.storage.EntityTracker;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
@@ -57,7 +57,7 @@ public abstract class MixinEntity {
 
         final UserConnection connection = ViaFabricPlus.api().userConnection();
         if (connection != null && swimming != this.isSwimming()) {
-            connection.get(EntityTracker.class).getClientPlayer().addAuthInputData(swimming ? PlayerAuthInputPacketPayload_InputData.StartSwimming : PlayerAuthInputPacketPayload_InputData.StopSwimming);
+            connection.get(EntityTracker.class).getClientPlayer().addAuthInputData(swimming ? PlayerAuthInputData.StartSwimming : PlayerAuthInputData.StopSwimming);
         }
     }
 

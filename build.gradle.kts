@@ -16,6 +16,12 @@ setupViaPublishing()
 repositories {
     maven("https://repo.viaversion.com")
     maven("https://maven.lenni0451.net/everything")
+    maven("https://repo.opencollab.dev/maven-snapshots") {
+        content {
+            includeGroupByRegex("org\\.cloudburstmc\\..+")
+            includeGroup("dev.opencollab")
+        }
+    }
     maven("https://jitpack.io") {
         content {
             includeGroup("com.github.oryxel1")
@@ -39,12 +45,12 @@ dependencies {
     shade("dev.kastle.netty:netty-transport-raknet:1.7.0") {
         exclude(group = "io.netty")
     }
-    shade("dev.kastle.netty:netty-transport-nethernet:1.7.0") {
+    shade("org.cloudburstmc.netty:netty-transport-nethernet:2.0.0.CR4-20260922.202324-5") {
         exclude(group = "io.netty")
+        exclude(group = "org.bouncycastle")
+        exclude(group = "dev.opencollab", module = "libdatachannel-java")
     }
-    arrayOf("windows-x86_64", "windows-aarch64", "linux-x86_64", "linux-aarch64", "macos-aarch64").forEach {
-        shade("dev.kastle.webrtc:webrtc-java:1.0.3:$it")
-    }
+    shade("dev.opencollab:libdatachannel-java-arch-detect:0.24.5.0-20260921.140330-12")
 }
 
 includeTransitiveJijDependencies()

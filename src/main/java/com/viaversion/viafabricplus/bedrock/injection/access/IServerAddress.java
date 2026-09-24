@@ -21,13 +21,13 @@
 
 package com.viaversion.viafabricplus.bedrock.injection.access;
 
-import dev.kastle.netty.channel.nethernet.config.NetherNetAddress;
+import java.net.SocketAddress;
 import org.jetbrains.annotations.Nullable;
 
 public interface IServerAddress {
 
-    @Nullable NetherNetAddress viaFabricPlusBedrock$getNetherNetAddress();
+    @Nullable SocketAddress viaFabricPlusBedrock$getNetherNetAddress();
 
-    void viaFabricPlusBedrock$setNetherNetAddress(final NetherNetAddress address);
+    void viaFabricPlusBedrock$setNetherNetAddress(final SocketAddress address);
 
 }

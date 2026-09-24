@@ -23,7 +23,7 @@ package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 
 import com.viaversion.viafabricplus.bedrock.injection.access.IServerAddress;
 import com.viaversion.viafabricplus.injection.access.core.IServerData;
-import dev.kastle.netty.channel.nethernet.config.NetherNetAddress;
+import java.net.SocketAddress;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.multiplayer.ServerData;
@@ -33,15 +33,15 @@ import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 public final class BedrockConnectionUtil {
 
     /**
-     * Connects to a Realm reachable via NetherNet instead of RakNet.
+     * Connects to a Bedrock world reachable via NetherNet.
      *
-     * @param address the NetherNet address of the Realm
+     * @param address the NetherNet address of the world
      */
-    public static void connectNetherNet(final NetherNetAddress address) {
-        final ServerAddress serverAddress = ServerAddress.parseString(address.getNetworkId() + ".nethernet.viafabricplus.localhost");
+    public static void connectNetherNet(final SocketAddress address) {
+        final ServerAddress serverAddress = ServerAddress.parseString("nethernet.viafabricplus.localhost");
         ((IServerAddress) (Object) serverAddress).viaFabricPlusBedrock$setNetherNetAddress(address);
 
-        final ServerData entry = new ServerData("Bedrock Realm " + address.getNetworkId(), serverAddress.getHost(), ServerData.Type.OTHER);
+        final ServerData entry = new ServerData("Bedrock NetherNet " + address, serverAddress.getHost(), ServerData.Type.OTHER);
         ((IServerData) entry).viaFabricPlus$forceVersion(BedrockProtocolVersion.bedrockLatest);
 
         ConnectScreen.startConnecting(Minecraft.getInstance().gui.screen(), Minecraft.getInstance(), serverAddress, entry, false, null);

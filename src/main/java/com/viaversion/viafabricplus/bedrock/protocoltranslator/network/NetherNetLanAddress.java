@@ -21,23 +21,30 @@
 
 package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-/**
- * Carries a NetherNet address through vanilla's code, which only knows {@link InetSocketAddress}.
- */
-public final class NetherNetInetSocketAddress extends InetSocketAddress {
+/** A LAN-discovered NetherNet endpoint. */
+public final class NetherNetLanAddress extends SocketAddress {
 
-    private final SocketAddress netherNetAddress;
+    private final String host;
+    private final int port;
 
-    public NetherNetInetSocketAddress(final SocketAddress netherNetAddress) {
-        super("nethernet.viafabricplus.localhost", 0);
-        this.netherNetAddress = netherNetAddress;
+    public NetherNetLanAddress(final String host, final int port) {
+        this.host = host;
+        this.port = port;
     }
 
-    public SocketAddress getNetherNetAddress() {
-        return this.netherNetAddress;
+    public String host() {
+        return this.host;
+    }
+
+    public int port() {
+        return this.port;
+    }
+
+    @Override
+    public String toString() {
+        return this.host + ":" + this.port;
     }
 
 }

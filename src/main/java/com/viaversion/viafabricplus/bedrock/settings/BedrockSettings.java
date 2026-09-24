@@ -54,7 +54,7 @@ public final class BedrockSettings {
         if (ViaFabricPlusBedrock.impl().settings().replaceDefaultPort().isActive()
             && Objects.equals(version, BedrockProtocolVersion.bedrockLatest)
             && !address.contains(":")) {
-            return address + ":" + ProtocolConstants.BEDROCK_RAKNET_DEFAULT_PORT;
+            return address + ":" + ProtocolConstants.BEDROCK_DEFAULT_PORT;
         } else {
             return address;
         }

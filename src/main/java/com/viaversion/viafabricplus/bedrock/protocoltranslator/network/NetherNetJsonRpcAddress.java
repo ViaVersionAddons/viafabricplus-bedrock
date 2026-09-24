@@ -21,7 +21,7 @@
 
 package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 
-import dev.kastle.netty.channel.nethernet.config.NetherNetAddress;
+import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 
 /**
  * Marks a NetherNet address which has to be signaled via the Xbox JSON-RPC service.

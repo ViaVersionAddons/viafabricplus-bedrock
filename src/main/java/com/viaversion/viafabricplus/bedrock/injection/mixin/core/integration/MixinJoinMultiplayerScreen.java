@@ -26,12 +26,16 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.injection.access.IServerAddress;
+import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetAddressParser;
 import com.viaversion.viafabricplus.bedrock.settings.BedrockSettings;
 import com.viaversion.viafabricplus.injection.access.core.IServerData;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
+import java.net.SocketAddress;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -47,6 +51,14 @@ public abstract class MixinJoinMultiplayerScreen {
             version = ViaFabricPlus.api().targetVersion();
         } else {
             version = mixinServerInfo.viaFabricPlus$forcedVersion();
+        }
+        if (BedrockProtocolVersion.bedrockLatest.equals(version)) {
+            final SocketAddress netherNetAddress = NetherNetAddressParser.parse(input);
+            if (netherNetAddress != null) {
+                final ServerAddress address = original.call("nethernet.viafabricplus.localhost");
+                ((IServerAddress) (Object) address).viaFabricPlusBedrock$setNetherNetAddress(netherNetAddress);
+                return address;
+            }
         }
         return original.call(ViaFabricPlusBedrock.impl().settings().replaceDefaultPort(input, version));
     }
