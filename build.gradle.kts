@@ -39,7 +39,7 @@ dependencies {
         exclude(group = "at.yawk.lz4", module = "lz4-java")
         exclude(group = "io.netty")
     }
-    shade("net.raphimc:MinecraftAuth:5.0.2") {
+    shade("net.raphimc:MinecraftAuth:5.0.3-SNAPSHOT") {
         exclude(group = "com.google.code.gson", module = "gson")
     }
     shade("dev.kastle.netty:netty-transport-raknet:1.7.0") {
@@ -51,6 +51,7 @@ dependencies {
         exclude(group = "dev.opencollab", module = "libdatachannel-java")
     }
     shade("dev.opencollab:libdatachannel-java-arch-detect:0.24.5.0-20260921.140330-12")
+    shade("com.microsoft.signalr.messagepack:signalr-messagepack:9.0.4")
 }
 
 includeTransitiveJijDependencies()

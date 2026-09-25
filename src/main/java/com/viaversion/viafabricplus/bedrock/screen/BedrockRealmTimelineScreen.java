@@ -22,129 +22,114 @@
 package com.viaversion.viafabricplus.bedrock.screen;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
-import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmTimelineService;
 import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmsError;
+import com.viaversion.viafabricplus.bedrock.visual.BedrockImageCache;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
-import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
-import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.minecraftauth.extra.realms.model.RealmsServer;
-import org.jspecify.annotations.NonNull;
+import net.raphimc.minecraftauth.extra.realms.service.impl.BedrockRealmsService;
+import org.jetbrains.annotations.Nullable;
 
-/** Explains the Realm's Timeline requirement before changing the member's own consent. */
+/** Explains Realm Timeline sharing before a member opts in. */
 public final class BedrockRealmTimelineScreen extends VFPScreen {
 
-    private final BedrockAuthManager account;
+    private static final String TIMELINE_IMAGE = "/assets/viafabricplus-bedrock/content/timeline-opt-in.png";
+
+    private final BedrockRealmsService service;
     private final RealmsServer realm;
     private final Runnable join;
-    private Component status = Component.translatable("bedrock_realms.viafabricplus.timeline.loading");
-    private boolean requested;
-    private boolean checking;
-    private boolean optedIn;
-    private boolean failed;
+    private @Nullable Component status;
     private boolean saving;
+    private boolean failed;
+    private boolean closed;
     private Button actionButton;
 
-    public BedrockRealmTimelineScreen(final BedrockAuthManager account, final RealmsServer realm, final Runnable join) {
+    public BedrockRealmTimelineScreen(final BedrockRealmsService service, final RealmsServer realm, final Runnable join) {
         super(Component.translatable("bedrock_realms.viafabricplus.timeline.title"), true);
-        this.account = account;
+        this.service = service;
         this.realm = realm;
         this.join = join;
     }
 
     @Override
     protected void init() {
-        this.actionButton = Button.builder(Component.empty(), _ -> this.act()).build();
-        this.addFooter(this.actionButton, Button.builder(Component.translatable("bedrock_realms.viafabricplus.timeline.back"), _ -> this.onClose()).build());
+        this.addRenderableOnly((graphics, mouseX, mouseY, delta) -> this.renderExplanation(graphics));
+        this.actionButton = Button.builder(Component.translatable("bedrock_realms.viafabricplus.timeline.opt_in"),
+            _ -> this.optIn()).build();
+        this.addFooter(this.actionButton, Button.builder(
+            Component.translatable("bedrock_realms.viafabricplus.timeline.back"), _ -> this.onClose()).build());
         super.init();
-        if (!this.requested) {
-            this.requested = true;
-            this.check();
-        }
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.actionButton.active = !this.checking && !this.saving;
-        this.actionButton.setMessage(Component.translatable(this.failed ? "bedrock_realms.viafabricplus.timeline.retry"
-            : this.optedIn ? "bedrock_realms.viafabricplus.timeline.join"
-                : "bedrock_realms.viafabricplus.timeline.opt_in"));
+        this.actionButton.active = !this.saving;
     }
 
     @Override
-    public void extractRenderState(final @NonNull GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float delta) {
-        super.extractRenderState(graphics, mouseX, mouseY, delta);
-        this.renderScreenTitle(graphics);
-
-        final int textWidth = Math.min(320, this.width - 32);
-        final String name = this.realm.getNameOr("Realm");
-        final String shownName = this.font.width(name) <= textWidth ? name
-            : this.font.plainSubstrByWidth(name, textWidth - this.font.width("…")) + "…";
-        final List<FormattedCharSequence> explanation = this.font.split(Component.translatable("bedrock_realms.viafabricplus.timeline.explanation"), textWidth);
-        final List<FormattedCharSequence> state = this.font.split(this.status, textWidth);
-        final int contentHeight = 22 + (explanation.size() + state.size()) * (this.font.lineHeight + 3) + 9;
-        int y = Math.max(38, (this.height - FOOTER_HEIGHT - contentHeight) / 2);
-        graphics.centeredText(this.font, shownName, this.width / 2, y, ACCENT_COLOR);
-        y += 22;
-        for (final FormattedCharSequence line : explanation) {
-            graphics.centeredText(this.font, line, this.width / 2, y, -1);
-            y += this.font.lineHeight + 3;
-        }
-        y += 9;
-        for (final FormattedCharSequence line : state) {
-            graphics.centeredText(this.font, line, this.width / 2, y, this.failed ? 0xFFFF7777 : 0xFFB8B8B8);
-            y += this.font.lineHeight + 3;
-        }
+    public void renderTitle(final GuiGraphicsExtractor graphics) {
+        super.renderTitle(graphics);
+        graphics.centeredText(this.font, this.title, this.width / 2, 32, -1);
     }
 
-    private void act() {
-        if (this.failed) {
-            this.check();
-        } else if (this.optedIn) {
-            this.onClose();
-            this.join.run();
-        } else {
-            this.optIn();
-        }
+    @Override
+    public void onClose() {
+        this.closed = true;
+        super.onClose();
     }
 
-    private void check() {
-        this.checking = true;
-        this.failed = false;
-        this.status = Component.translatable("bedrock_realms.viafabricplus.timeline.loading");
-        BedrockRealmTimelineService.isOptedIn(this.account, this.realm.getId()).whenComplete((optedIn, error) ->
-            Minecraft.getInstance().execute(() -> {
-                this.checking = false;
-                if (error != null) {
-                    ViaFabricPlusBedrock.impl().logger().error("Failed to load Realm Timeline consent", error);
-                    this.failed = true;
-                    this.status = BedrockRealmsError.describe(error);
-                    showToast(this.status);
-                } else {
-                    this.optedIn = optedIn;
-                    this.status = Component.translatable(optedIn ? "bedrock_realms.viafabricplus.timeline.already_in"
-                        : "bedrock_realms.viafabricplus.timeline.choice");
-                }
-            }));
+    private void renderExplanation(final GuiGraphicsExtractor graphics) {
+        final int textWidth = Math.min(420, this.width - 32);
+        final int left = (this.width - textWidth) / 2;
+        graphics.centeredText(this.font, Component.translatable("bedrock_realms.viafabricplus.timeline.requirement"),
+            this.width / 2, 60, -1);
+
+        final String explanationKey = this.height < 170
+            ? "bedrock_realms.viafabricplus.timeline.explanation_tiny"
+            : this.height < 240
+                ? "bedrock_realms.viafabricplus.timeline.explanation_short"
+                : "bedrock_realms.viafabricplus.timeline.explanation";
+        final Component body = this.status != null && (this.failed || this.saving)
+            ? this.status : Component.translatable(explanationKey);
+        int y = 82;
+        for (final FormattedCharSequence line : this.font.split(body, textWidth)) {
+            if (y + this.font.lineHeight >= this.height - FOOTER_HEIGHT) {
+                break;
+            }
+            graphics.text(this.font, line, left, y, this.failed ? 0xFFFF5555 : -1);
+            y += this.font.lineHeight + 3;
+        }
+        final int imageTop = y + 12;
+        final int maxHeight = this.height - FOOTER_HEIGHT - imageTop - 8;
+        if (maxHeight >= 90) {
+            final int imageWidth = Math.min(textWidth, Math.min(420, maxHeight * 16 / 9));
+            final int imageHeight = imageWidth * 9 / 16;
+            BedrockImageCache.drawBundled(graphics, TIMELINE_IMAGE, (this.width - imageWidth) / 2,
+                imageTop, imageWidth, imageHeight);
+        }
     }
 
     private void optIn() {
+        if (this.saving) {
+            return;
+        }
         this.saving = true;
+        this.failed = false;
         this.status = Component.translatable("bedrock_realms.viafabricplus.timeline.saving");
-        BedrockRealmTimelineService.optIn(this.account, this.realm.getId()).whenComplete((_, error) ->
+        this.service.updateWorldStorySettingsAsync(this.realm, null, true).whenComplete((_, error) ->
             Minecraft.getInstance().execute(() -> {
                 this.saving = false;
                 if (error != null) {
+                    this.failed = true;
                     ViaFabricPlusBedrock.impl().logger().error("Failed to opt in to Realm Timeline", error);
                     this.status = BedrockRealmsError.describe(error);
                     showToast(this.status);
-                } else {
-                    this.optedIn = true;
+                } else if (!this.closed) {
                     this.onClose();
                     this.join.run();
                 }
