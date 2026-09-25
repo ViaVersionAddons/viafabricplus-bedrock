@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 /** Turns Realms responses into short, useful messages while preserving unknown service errors. */
 public final class BedrockRealmsError {
 
-    private static final int TIMELINE_OPT_IN_REQUIRED = 6015;
+    private static final int TIMELINE_OPT_IN_REQUIRED = RealmsRequestException.ERROR_TIMELINE_OPT_IN_REQUIRED;
 
     private BedrockRealmsError() {
     }

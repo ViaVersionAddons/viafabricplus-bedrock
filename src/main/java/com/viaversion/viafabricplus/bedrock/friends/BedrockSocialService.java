@@ -21,7 +21,9 @@
 
 package com.viaversion.viafabricplus.bedrock.friends;
 
+import com.viaversion.viafabricplus.bedrock.visual.BedrockPlayerImages;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -34,6 +36,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.minecraftauth.xbl.model.XblXstsToken;
@@ -43,6 +47,8 @@ public final class BedrockSocialService {
 
     private static final URI PEOPLE = URI.create("https://peoplehub.xboxlive.com/users/me/people/");
     private static final URI SOCIAL = URI.create("https://social.xboxlive.com/users/me/people/friends/v2/");
+    private static final URI FAVORITES = URI.create("https://social.xboxlive.com/users/me/people/favorites/xuids");
+    private static final URI PROFILES = URI.create("https://profile.xboxlive.com/users/batch/profile/settings");
     private static final String DECORATIONS = "/decoration/bio,detail,multiplayerSummary,preferredColor,presenceDetail";
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
@@ -52,7 +58,7 @@ public final class BedrockSocialService {
     public static CompletableFuture<List<SocialUser>> friends(final BedrockAuthManager account) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return users(PEOPLE.resolve("friends" + DECORATIONS), account.getXboxLiveXstsToken().refresh());
+                return users(PEOPLE.resolve("friends" + DECORATIONS), account.getXboxLiveXstsToken().getUpToDate());
             } catch (Exception exception) {
                 throw new IllegalStateException("Could not load Xbox friends", exception);
             }
@@ -62,7 +68,7 @@ public final class BedrockSocialService {
     public static CompletableFuture<FriendRequests> requests(final BedrockAuthManager account) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final XblXstsToken token = account.getXboxLiveXstsToken().refresh();
+                final XblXstsToken token = account.getXboxLiveXstsToken().getUpToDate();
                 return new FriendRequests(
                     users(PEOPLE.resolve("friendRequests(received)" + DECORATIONS), token),
                     users(PEOPLE.resolve("friendRequests(sent)" + DECORATIONS), token)
@@ -78,9 +84,126 @@ public final class BedrockSocialService {
             try {
                 final String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
                 final URI uri = PEOPLE.resolve("search/decoration/detail,preferredColor?q=" + encoded);
-                return users(uri, account.getXboxLiveXstsToken().refresh());
+                return users(uri, account.getXboxLiveXstsToken().getUpToDate());
             } catch (Exception exception) {
                 throw new IllegalStateException("Could not search Xbox players", exception);
+            }
+        });
+    }
+
+    public static CompletableFuture<List<SocialUser>> recommendations(final BedrockAuthManager account) {
+        return list(account, "recommendations", "Could not load recommended players");
+    }
+
+    public static CompletableFuture<List<SocialUser>> recentPlayers(final BedrockAuthManager account) {
+        return list(account, "recentplayers", "Could not load recent players");
+    }
+
+    public static CompletableFuture<List<SocialUser>> followers(final BedrockAuthManager account) {
+        return list(account, "followers", "Could not load Xbox followers");
+    }
+
+    private static CompletableFuture<List<SocialUser>> list(final BedrockAuthManager account, final String path, final String error) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return users(PEOPLE.resolve(path + DECORATIONS), account.getXboxLiveXstsToken().getUpToDate());
+            } catch (Exception exception) {
+                throw new IllegalStateException(error, exception);
+            }
+        });
+    }
+
+    public static CompletableFuture<Void> updateFavorite(final BedrockAuthManager account, final String xuid, final boolean add) {
+        if (!xuid.matches("[0-9]+")) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid Xbox user ID"));
+        }
+        return CompletableFuture.runAsync(() -> {
+            try {
+                final JsonObject body = new JsonObject();
+                final com.google.gson.JsonArray xuids = new com.google.gson.JsonArray();
+                xuids.add(xuid);
+                body.add("xuids", xuids);
+                final HttpRequest request = HttpRequest.newBuilder(URI.create(FAVORITES + "?method=" + (add ? "add" : "remove")))
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Authorization", account.getXboxLiveXstsToken().getUpToDate().getAuthorizationHeader())
+                    .header("X-Xbl-Contract-Version", "1")
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                    .build();
+                final HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() / 100 != 2) {
+                    throw BedrockXboxError.response("Xbox favorite update", response);
+                }
+            } catch (Exception exception) {
+                throw new IllegalStateException("Could not update Xbox favorite", exception);
+            }
+        });
+    }
+
+    /** Resolve party members who are not on the current user's friends list. */
+    public static CompletableFuture<Map<String, String>> profileNames(final BedrockAuthManager account,
+                                                                     final List<String> xuids) {
+        if (xuids.isEmpty()) {
+            return CompletableFuture.completedFuture(Map.of());
+        }
+        if (xuids.size() > 100 || xuids.stream().anyMatch(xuid -> !xuid.matches("[0-9]+"))) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid Xbox profile IDs"));
+        }
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                final JsonObject body = new JsonObject();
+                final JsonArray userIds = new JsonArray();
+                xuids.forEach(userIds::add);
+                body.add("userIds", userIds);
+                final JsonArray settings = new JsonArray();
+                settings.add("GameDisplayName");
+                settings.add("Gamertag");
+                settings.add("GameDisplayPicRaw");
+                settings.add("AppDisplayPicRaw");
+                body.add("settings", settings);
+                final HttpRequest request = HttpRequest.newBuilder(PROFILES)
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Authorization", account.getXboxLiveXstsToken().getUpToDate().getAuthorizationHeader())
+                    .header("X-Xbl-Contract-Version", "2")
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();
+                final HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() / 100 != 2) {
+                    throw BedrockXboxError.response("Xbox profile lookup", response);
+                }
+                final JsonObject data = JsonParser.parseString(response.body()).getAsJsonObject();
+                final Map<String, String> names = new HashMap<>();
+                for (final JsonElement element : data.getAsJsonArray("profileUsers")) {
+                    final JsonObject profile = element.getAsJsonObject();
+                    String displayName = "";
+                    String gamertag = "";
+                    String picture = "";
+                    String appPicture = "";
+                    for (final JsonElement settingElement : profile.getAsJsonArray("settings")) {
+                        final JsonObject setting = settingElement.getAsJsonObject();
+                        if ("GameDisplayName".equals(string(setting, "id"))) {
+                            displayName = string(setting, "value");
+                        } else if ("Gamertag".equals(string(setting, "id"))) {
+                            gamertag = string(setting, "value");
+                        } else if ("GameDisplayPicRaw".equals(string(setting, "id"))) {
+                            picture = string(setting, "value");
+                        } else if ("AppDisplayPicRaw".equals(string(setting, "id"))) {
+                            appPicture = string(setting, "value");
+                        }
+                    }
+                    BedrockPlayerImages.remember(string(profile, "id"), picture.isBlank() ? appPicture : picture);
+                    final String name = displayName.isBlank() ? gamertag : displayName;
+                    if (!name.isBlank()) {
+                        BedrockPlayerImages.rememberName(string(profile, "id"), gamertag.isBlank() ? name : gamertag);
+                        names.put(string(profile, "id"), name);
+                    }
+                }
+                return Map.copyOf(names);
+            } catch (Exception exception) {
+                throw new IllegalStateException("Could not load Xbox party profiles", exception);
             }
         });
     }
@@ -96,7 +219,7 @@ public final class BedrockSocialService {
                     // Xbox requires Content-Length: 0 here; Java's HTTP/2 request omits it and receives 411.
                     .version(HttpClient.Version.HTTP_1_1)
                     .timeout(Duration.ofSeconds(15))
-                    .header("Authorization", account.getXboxLiveXstsToken().refresh().getAuthorizationHeader())
+                    .header("Authorization", account.getXboxLiveXstsToken().getUpToDate().getAuthorizationHeader())
                     .header("X-Xbl-Contract-Version", "3")
                     .header("Accept", "application/json")
                     .header("Cache-Control", "no-cache")
@@ -136,15 +259,17 @@ public final class BedrockSocialService {
             if (xuid.isBlank()) {
                 continue;
             }
+            BedrockPlayerImages.remember(xuid, string(user, "displayPicRaw"));
             final String gamertag = string(user, "uniqueModernGamertag").isBlank()
                 ? string(user, "gamertag") : string(user, "uniqueModernGamertag");
+            BedrockPlayerImages.rememberName(xuid, gamertag);
             final JsonObject detail = user.has("detail") && user.get("detail").isJsonObject()
                 ? user.getAsJsonObject("detail") : new JsonObject();
             result.add(new SocialUser(xuid, gamertag, string(user, "displayName"),
                 "Online".equalsIgnoreCase(string(user, "presenceState")), string(user, "presenceText"),
                 string(user, "gamerScore"), number(detail, "friendCount"), bool(user, "isFriend") || bool(detail, "friend"),
                 bool(user, "isFriendRequestReceived") || bool(detail, "isFriendRequestReceived"),
-                bool(user, "isFriendRequestSent") || bool(detail, "isFriendRequestSent")));
+                bool(user, "isFriendRequestSent") || bool(detail, "isFriendRequestSent"), bool(user, "isFavorite")));
         }
         return List.copyOf(result);
     }
@@ -166,7 +291,8 @@ public final class BedrockSocialService {
     }
 
     public record SocialUser(String xuid, String gamertag, String displayName, boolean online, String presence,
-                             String gamerScore, int friendCount, boolean friend, boolean incoming, boolean outgoing) {
+                             String gamerScore, int friendCount, boolean friend, boolean incoming, boolean outgoing,
+                             boolean favorite) {
 
         public String name() {
             return !this.displayName.isBlank() ? this.displayName : !this.gamertag.isBlank() ? this.gamertag : this.xuid;

@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import net.lenni0451.commons.httpclient.exceptions.HttpRequestException;
 import net.minecraft.network.chat.Component;
+import net.raphimc.minecraftauth.bedrock.exception.MinecraftServicesRequestException;
 import org.jetbrains.annotations.Nullable;
 
 /** Formats Xbox PeopleHub, Social, and multiplayer session errors for the Friends screen. */
@@ -77,6 +79,18 @@ public final class BedrockXboxError {
                     default -> Component.translatable("bedrock_friends.viafabricplus.error.http", request.status);
                 };
             }
+            if (cause instanceof HttpRequestException request && request.getResponse() != null) {
+                final int status = request.getResponse().getStatusCode();
+                return switch (status) {
+                    case 401 -> Component.translatable("bedrock_friends.viafabricplus.error.auth");
+                    case 429 -> Component.translatable(request instanceof MinecraftServicesRequestException
+                        ? "bedrock_friends.viafabricplus.error.token_rate_limit"
+                        : "bedrock_friends.viafabricplus.error.rate_limit");
+                    default -> status >= 500
+                        ? Component.translatable("bedrock_friends.viafabricplus.error.unavailable", status)
+                        : Component.translatable("bedrock_friends.viafabricplus.error.http", status);
+                };
+            }
             if (cause instanceof HttpTimeoutException || cause instanceof SocketTimeoutException) {
                 return Component.translatable("bedrock_friends.viafabricplus.error.timeout");
             }
@@ -88,6 +102,19 @@ public final class BedrockXboxError {
         final String message = shorten(root.getMessage());
         return message.isBlank() ? Component.translatable("bedrock_friends.viafabricplus.error.unknown")
             : Component.translatable("bedrock_friends.viafabricplus.error.other", message);
+    }
+
+    public static boolean isRateLimited(final Throwable error) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof XboxRequestException request && request.status == 429) {
+                return true;
+            }
+            if (cause instanceof HttpRequestException request && request.getResponse() != null
+                && request.getResponse().getStatusCode() == 429) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String first(final JsonObject object, final String... keys) {

@@ -29,12 +29,14 @@ import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService.FriendR
 import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService.SocialUser;
 import com.viaversion.viafabricplus.bedrock.friends.BedrockXboxError;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.BedrockConnectionUtil;
+import com.viaversion.viafabricplus.bedrock.visual.BedrockPlayerImages;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
-import com.viaversion.viafabricplus.screen.base.list.VFPList;
 import com.viaversion.viafabricplus.screen.base.list.VFPListEntry;
 import com.viaversion.viafabricplus.screen.base.list.VFPTextEntry;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -53,10 +55,10 @@ public final class BedrockFriendsScreen extends VFPScreen {
 
     public static final Component TITLE = Component.translatable("screen.viafabricplus.bedrock_friends");
 
-    private static final int TABS_TOP = 36;
-    private static final int DETAILS_TOP = 65;
-    private static final int LIST_TOP = 64;
-    private static final int SEARCH_LIST_TOP = 88;
+    private static final int TABS_TOP = 48;
+    private static final int DETAILS_TOP = 77;
+    private static final int LIST_TOP = 76;
+    private static final int SEARCH_LIST_TOP = 124;
     private static final int ROW_WIDTH = 352;
     private static final int SECONDARY_COLOR = 0xFFB8B8B8;
     private static final long REFRESH_INTERVAL = TimeUnit.MINUTES.toNanos(2);
@@ -64,7 +66,11 @@ public final class BedrockFriendsScreen extends VFPScreen {
         .thenComparing(SocialUser::name, String.CASE_INSENSITIVE_ORDER);
 
     private enum View {
-        FRIENDS, REQUESTS, SEARCH, WORLDS
+        FRIENDS, REQUESTS, SEARCH, WORLDS, PARTY
+    }
+
+    private enum Discovery {
+        RESULTS, SUGGESTED, RECENT, FOLLOWERS
     }
 
     private View view = View.FRIENDS;
@@ -72,6 +78,12 @@ public final class BedrockFriendsScreen extends VFPScreen {
     private @Nullable FriendRequests requests;
     private @Nullable List<FriendWorld> worlds;
     private @Nullable List<SocialUser> searchResults;
+    private final Map<Discovery, List<SocialUser>> discoveryResults = new EnumMap<>(Discovery.class);
+    private final Map<Discovery, Boolean> discoveryErrors = new EnumMap<>(Discovery.class);
+    private Discovery discovery = Discovery.RESULTS;
+    private @Nullable SocialUser self;
+    private boolean selfLoading;
+    private boolean discoveryLoading;
     private String query = "";
     private boolean requested;
     private boolean friendsLoading;
@@ -113,13 +125,22 @@ public final class BedrockFriendsScreen extends VFPScreen {
         if (this.view == View.SEARCH) {
             final int width = Math.min(230, this.width - 100);
             final int x = (this.width - width - 72) / 2;
-            final EditBox field = this.addRenderableWidget(new EditBox(this.font, x, DETAILS_TOP - 4, width, 20,
-                Component.translatable("bedrock_friends.viafabricplus.search_hint")));
+            final EditBox field = this.addRenderableWidget(new SubmitEditBox(this.font, x, DETAILS_TOP - 4, width, 20,
+                Component.translatable("bedrock_friends.viafabricplus.search_hint"), this::search));
             field.setHint(Component.translatable("bedrock_friends.viafabricplus.search_hint"));
             field.setValue(this.query);
             field.setResponder(value -> this.query = value.trim());
             this.addRenderableWidget(Button.builder(Component.translatable("bedrock_friends.viafabricplus.find"), _ -> this.search())
                 .pos(x + width + 4, DETAILS_TOP - 4).size(68, 20).build());
+            final int categoryWidth = Math.min(88, (this.width - 20) / Discovery.values().length);
+            final int categoryLeft = (this.width - categoryWidth * Discovery.values().length) / 2;
+            for (final Discovery category : Discovery.values()) {
+                final Button button = Button.builder(Component.translatable("bedrock_friends.viafabricplus.discover."
+                        + category.name().toLowerCase()), _ -> this.show(category))
+                    .pos(categoryLeft + category.ordinal() * categoryWidth, DETAILS_TOP + 19).size(categoryWidth, 20).build();
+                button.active = category != this.discovery;
+                this.addRenderableWidget(button);
+            }
         }
 
         this.list = this.addRenderableWidget(new SlotList(this.minecraft, this.width, this.height,
@@ -145,14 +166,16 @@ public final class BedrockFriendsScreen extends VFPScreen {
         final boolean busy = this.joining || this.mutating;
         this.joinButton.active = !busy && Minecraft.getInstance().getConnection() == null && this.selectedWorld() != null;
         this.profileButton.active = user != null;
-        this.addButton.active = !busy && user != null && !this.isFriend(user) && !this.isOutgoing(user);
-        this.removeButton.active = !busy && user != null && (this.isFriend(user) || this.isIncoming(user) || this.isOutgoing(user));
+        this.addButton.active = !busy && user != null && !this.isSelf(user) && !this.isFriend(user) && !this.isOutgoing(user);
+        this.removeButton.active = !busy && user != null && !this.isSelf(user)
+            && (this.isFriend(user) || this.isIncoming(user) || this.isOutgoing(user));
         this.addButton.setMessage(Component.translatable(user != null && this.isIncoming(user)
             ? "bedrock_friends.viafabricplus.accept" : "bedrock_friends.viafabricplus.add"));
         this.removeButton.setMessage(Component.translatable(user != null && this.isIncoming(user)
             ? "bedrock_friends.viafabricplus.decline" : user != null && this.isOutgoing(user)
                 ? "bedrock_friends.viafabricplus.cancel" : "bedrock_friends.viafabricplus.remove"));
-        this.refreshButton.active = !busy && !this.friendsLoading && !this.requestsLoading && !this.worldsLoading && !this.searching;
+        this.refreshButton.active = !busy && !this.friendsLoading && !this.requestsLoading && !this.worldsLoading
+            && !this.searching && !this.discoveryLoading;
         if (System.nanoTime() - this.lastRefresh >= REFRESH_INTERVAL && !busy) {
             this.refresh();
         }
@@ -160,26 +183,96 @@ public final class BedrockFriendsScreen extends VFPScreen {
 
     @Override
     public void renderTitle(final GuiGraphicsExtractor graphics) {
-        graphics.pose().pushMatrix();
-        graphics.pose().scale(2F, 2F);
-        graphics.centeredText(this.font, this.title, this.width / 4, 6, ACCENT_COLOR);
-        graphics.pose().popMatrix();
+        super.renderTitle(graphics);
+        graphics.centeredText(this.font, this.title, this.width / 2, 32, -1);
     }
 
     private void show(final View tab) {
+        if (tab == View.PARTY) {
+            new BedrockPartyScreen().open(this);
+            return;
+        }
         this.view = tab;
         this.rebuildWidgets();
+        if (tab == View.SEARCH && this.discovery != Discovery.RESULTS) {
+            this.loadDiscovery();
+        }
+    }
+
+    private void show(final Discovery category) {
+        this.discovery = category;
+        this.rebuildWidgets();
+        this.loadDiscovery();
     }
 
     private void refresh() {
         this.lastRefresh = System.nanoTime();
         if (this.view == View.SEARCH) {
-            this.search();
+            if (this.discovery == Discovery.RESULTS) {
+                this.search();
+            } else {
+                this.discoveryResults.remove(this.discovery);
+                this.loadDiscovery();
+            }
         } else {
             this.loadFriends();
             this.loadRequests();
             this.loadWorlds();
+            this.loadSelf();
         }
+    }
+
+    private void loadSelf() {
+        final BedrockAuthManager account = ViaFabricPlusBedrock.impl().account().get();
+        if (account == null || this.selfLoading) {
+            return;
+        }
+        this.selfLoading = true;
+        account.getXboxUserProfile().getUpToDateAsync().thenAcceptAsync(profile -> {
+            this.selfLoading = false;
+            if (ViaFabricPlusBedrock.impl().account().get() == account) {
+                BedrockPlayerImages.remember(profile.getId(),
+                    profile.getSettings().getOrDefault("AppDisplayPicRaw", ""));
+                final String name = ViaFabricPlusBedrock.impl().account().displayName();
+                this.self = new SocialUser(profile.getId(), name == null ? "" : name,
+                    name == null ? "" : name, true, "", "", -1, false, false, false, false);
+                if (this.view == View.FRIENDS) {
+                    this.rebuildWidgets();
+                }
+            }
+        }, Minecraft.getInstance()).exceptionally(error -> this.fail("Failed to load Xbox profile", error,
+            () -> this.selfLoading = false));
+    }
+
+    private void loadDiscovery() {
+        if (this.discovery == Discovery.RESULTS || this.discoveryResults.containsKey(this.discovery) || this.discoveryLoading) {
+            return;
+        }
+        final BedrockAuthManager account = ViaFabricPlusBedrock.impl().account().get();
+        if (account == null) {
+            return;
+        }
+        this.discoveryLoading = true;
+        this.discoveryErrors.remove(this.discovery);
+        final Discovery category = this.discovery;
+        final var request = switch (category) {
+            case SUGGESTED -> BedrockSocialService.recommendations(account);
+            case RECENT -> BedrockSocialService.recentPlayers(account);
+            case FOLLOWERS -> BedrockSocialService.followers(account);
+            case RESULTS -> throw new IllegalStateException("Search results are loaded separately");
+        };
+        request.thenAcceptAsync(results -> {
+            this.discoveryLoading = false;
+            if (ViaFabricPlusBedrock.impl().account().get() == account) {
+                this.discoveryResults.put(category, results);
+                if (this.view == View.SEARCH && this.discovery == category) {
+                    this.rebuildWidgets();
+                }
+            }
+        }, Minecraft.getInstance()).exceptionally(error -> this.fail("Failed to load Xbox players", error, () -> {
+            this.discoveryLoading = false;
+            this.discoveryErrors.put(category, true);
+        }));
     }
 
     private void loadFriends() {
@@ -286,6 +379,10 @@ public final class BedrockFriendsScreen extends VFPScreen {
         return this.list.getFocused() instanceof UserEntry entry ? entry.user : null;
     }
 
+    private boolean isSelf(final SocialUser user) {
+        return this.self != null && this.self.xuid().equals(user.xuid());
+    }
+
     private boolean isFriend(final SocialUser user) {
         return user.friend() || this.friends != null && this.friends.stream().anyMatch(friend -> friend.xuid().equals(user.xuid()));
     }
@@ -347,9 +444,10 @@ public final class BedrockFriendsScreen extends VFPScreen {
         if (user == null) {
             return;
         }
-        final String relationship = this.isFriend(user) ? "profile_friend" : this.isIncoming(user)
+        final String relationship = this.isSelf(user) ? "profile_self" : this.isFriend(user) ? "profile_friend" : this.isIncoming(user)
             ? "profile_incoming" : this.isOutgoing(user) ? "profile_outgoing" : "profile_not_friend";
-        new BedrockFriendProfileScreen(user, Component.translatable("bedrock_friends.viafabricplus." + relationship)).open(this);
+        new BedrockFriendProfileScreen(user, Component.translatable("bedrock_friends.viafabricplus." + relationship),
+            this.isSelf(user), this.isFriend(user)).open(this);
     }
 
     private void confirmRemove() {
@@ -407,7 +505,7 @@ public final class BedrockFriendsScreen extends VFPScreen {
         return null;
     }
 
-    private final class SlotList extends VFPList {
+    private final class SlotList extends ActionList {
 
         private static double scrollAmount;
 
@@ -418,11 +516,32 @@ public final class BedrockFriendsScreen extends VFPScreen {
                 case REQUESTS -> this.addRequests();
                 case SEARCH -> this.addSearch();
                 case WORLDS -> this.addWorlds();
+                case PARTY -> { }
             }
             this.setScrollAmount(scrollAmount);
         }
 
+        @Override
+        protected boolean activate(final VFPListEntry entry) {
+            if (entry instanceof WorldEntry || entry instanceof UserEntry && BedrockFriendsScreen.this.selectedWorld() != null) {
+                if (BedrockFriendsScreen.this.joining || BedrockFriendsScreen.this.mutating
+                    || Minecraft.getInstance().getConnection() != null) {
+                    return false;
+                }
+                BedrockFriendsScreen.this.join();
+                return true;
+            }
+            if (entry instanceof UserEntry) {
+                BedrockFriendsScreen.this.showProfile();
+                return true;
+            }
+            return false;
+        }
+
         private void addFriends() {
+            if (BedrockFriendsScreen.this.self != null) {
+                this.addEntry(new UserEntry(this, BedrockFriendsScreen.this.self));
+            }
             if (BedrockFriendsScreen.this.friends == null) {
                 this.addEntry(new VFPTextEntry(Component.translatable(BedrockFriendsScreen.this.friendsError
                     ? "bedrock_friends.viafabricplus.load_failed" : "bedrock_friends.viafabricplus.loading")));
@@ -453,6 +572,19 @@ public final class BedrockFriendsScreen extends VFPScreen {
         }
 
         private void addSearch() {
+            if (BedrockFriendsScreen.this.discovery != Discovery.RESULTS) {
+                final List<SocialUser> results = BedrockFriendsScreen.this.discoveryResults.get(BedrockFriendsScreen.this.discovery);
+                if (results == null) {
+                    this.addEntry(new VFPTextEntry(Component.translatable(BedrockFriendsScreen.this.discoveryErrors.containsKey(
+                        BedrockFriendsScreen.this.discovery) ? "bedrock_friends.viafabricplus.load_failed"
+                        : "bedrock_friends.viafabricplus.loading")));
+                } else if (results.isEmpty()) {
+                    this.addEntry(new VFPTextEntry(Component.translatable("bedrock_friends.viafabricplus.no_results")));
+                } else {
+                    results.forEach(user -> this.addEntry(new UserEntry(this, user)));
+                }
+                return;
+            }
             if (BedrockFriendsScreen.this.searchResults == null) {
                 this.addEntry(new VFPTextEntry(Component.translatable(BedrockFriendsScreen.this.searching
                     ? "bedrock_friends.viafabricplus.searching" : BedrockFriendsScreen.this.searchError
@@ -518,11 +650,14 @@ public final class BedrockFriendsScreen extends VFPScreen {
         @Override
         public void mappedRender(final GuiGraphicsExtractor graphics, final int entryWidth, final int entryHeight) {
             final Font font = Minecraft.getInstance().font;
+            final int portrait = Math.min(23, entryHeight - 5);
+            final int textX = SLOT_MARGIN + portrait + 5;
+            BedrockPlayerImages.draw(graphics, this.user.xuid(), SLOT_MARGIN, (entryHeight - portrait) / 2, portrait);
             final FriendWorld world = this.list.screenWorld(this.user.xuid());
             final Component status = Component.translatable(world != null ? "bedrock_friends.viafabricplus.joinable"
                 : this.user.online() ? "bedrock_friends.viafabricplus.online" : "bedrock_friends.viafabricplus.offline");
             final int statusWidth = font.width(status);
-            final int textWidth = entryWidth - statusWidth - SLOT_MARGIN * 3 - 8;
+            final int textWidth = entryWidth - statusWidth - textX - SLOT_MARGIN - 8;
             final String detail;
             if (world != null) {
                 detail = Component.translatable("bedrock_friends.viafabricplus.playing", world.worldName()).getString();
@@ -533,15 +668,12 @@ public final class BedrockFriendsScreen extends VFPScreen {
                     ? this.user.gamertag() : this.user.presence();
             }
             final int titleY = detail.isBlank() ? (entryHeight - font.lineHeight) / 2 : SLOT_MARGIN + 1;
-            if (this.list.getFocused() == this) {
-                graphics.fill(0, 0, 2, entryHeight, ACCENT_COLOR);
-            }
-            graphics.text(font, fit(font, this.user.name(), textWidth), SLOT_MARGIN, titleY,
+            graphics.text(font, fit(font, this.user.name(), textWidth), textX, titleY,
                 this.list.getFocused() == this ? ACCENT_COLOR : -1);
             graphics.text(font, status, entryWidth - statusWidth - SLOT_MARGIN, titleY,
                 world != null ? ACCENT_COLOR : this.user.online() ? -1 : SECONDARY_COLOR);
             if (!detail.isBlank()) {
-                graphics.text(font, fit(font, detail, entryWidth - SLOT_MARGIN * 2), SLOT_MARGIN,
+                graphics.text(font, fit(font, detail, entryWidth - textX - SLOT_MARGIN), textX,
                     SLOT_MARGIN + font.lineHeight + 4, SECONDARY_COLOR);
             }
         }
@@ -566,18 +698,19 @@ public final class BedrockFriendsScreen extends VFPScreen {
         @Override
         public void mappedRender(final GuiGraphicsExtractor graphics, final int entryWidth, final int entryHeight) {
             final Font font = Minecraft.getInstance().font;
+            final int portrait = Math.min(23, entryHeight - 5);
+            final int textX = SLOT_MARGIN + portrait + 5;
+            BedrockPlayerImages.draw(graphics, this.world.ownerXuid(), SLOT_MARGIN,
+                (entryHeight - portrait) / 2, portrait);
             final String players = Component.translatable("bedrock_friends.viafabricplus.players",
                 this.world.players(), this.world.maxPlayers()).getString();
             final int playersWidth = font.width(players);
             final int versionWidth = font.width(this.world.version());
-            if (this.list.getFocused() == this) {
-                graphics.fill(0, 0, 2, entryHeight, ACCENT_COLOR);
-            }
-            graphics.text(font, fit(font, this.world.worldName(), entryWidth - playersWidth - SLOT_MARGIN * 3 - 8),
-                SLOT_MARGIN, SLOT_MARGIN + 1, this.list.getFocused() == this ? ACCENT_COLOR : -1);
+            graphics.text(font, fit(font, this.world.worldName(), entryWidth - playersWidth - textX - SLOT_MARGIN - 8),
+                textX, SLOT_MARGIN + 1, this.list.getFocused() == this ? ACCENT_COLOR : -1);
             graphics.text(font, players, entryWidth - playersWidth - SLOT_MARGIN, SLOT_MARGIN + 1, -1);
-            graphics.text(font, fit(font, this.world.hostName(), entryWidth - versionWidth - SLOT_MARGIN * 3 - 8),
-                SLOT_MARGIN, SLOT_MARGIN + font.lineHeight + 4, SECONDARY_COLOR);
+            graphics.text(font, fit(font, this.world.hostName(), entryWidth - versionWidth - textX - SLOT_MARGIN - 8),
+                textX, SLOT_MARGIN + font.lineHeight + 4, SECONDARY_COLOR);
             graphics.text(font, this.world.version(), entryWidth - versionWidth - SLOT_MARGIN,
                 SLOT_MARGIN + font.lineHeight + 4, SECONDARY_COLOR);
         }

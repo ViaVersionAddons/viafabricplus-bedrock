@@ -22,11 +22,13 @@
 package com.viaversion.viafabricplus.bedrock.screen;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.BedrockConnectionUtil;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetJsonRpcAddress;
 import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmsError;
+import com.viaversion.viafabricplus.bedrock.visual.BedrockPlayerImages;
+import com.viaversion.viafabricplus.bedrock.visual.BedrockRealmImages;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
-import com.viaversion.viafabricplus.screen.base.list.VFPList;
 import com.viaversion.viafabricplus.screen.base.list.VFPListEntry;
 import com.viaversion.viafabricplus.screen.base.list.VFPTextEntry;
 import com.viaversion.viafabricplus.util.network.ConnectionUtil;
@@ -64,10 +66,17 @@ public final class BedrockRealmsScreen extends VFPScreen {
     private boolean joining;
     private Button joinButton;
     private Button leaveButton;
+    private Button hubButton;
     private Button refreshButton;
 
     public BedrockRealmsScreen() {
         super(TITLE, true);
+    }
+
+    @Override
+    public void renderTitle(final GuiGraphicsExtractor graphics) {
+        super.renderTitle(graphics);
+        graphics.centeredText(this.font, this.title, this.width / 2, 32, -1);
     }
 
     /**
@@ -87,8 +96,9 @@ public final class BedrockRealmsScreen extends VFPScreen {
             this.load();
         }
 
-        this.list = this.addRenderableWidget(new SlotList(this.minecraft, this.width, this.height, CONTENT_TOP, FOOTER_HEIGHT,
+        this.list = this.addRenderableWidget(new SlotList(this, this.minecraft, this.width, this.height, CONTENT_TOP, FOOTER_HEIGHT,
             (this.font.lineHeight + 2) * 3 /* name, version and motd */));
+        this.addRenderableOnly((graphics, mouseX, mouseY, delta) -> this.renderRealmDetails(graphics));
 
         this.joinButton = Button.builder(Component.translatable("bedrock_realms.viafabricplus.join"), _ -> this.join()).build();
         this.joinButton.active = false;
@@ -96,12 +106,15 @@ public final class BedrockRealmsScreen extends VFPScreen {
         this.leaveButton = Button.builder(Component.translatable("bedrock_realms.viafabricplus.leave"), _ -> this.leave()).build();
         this.leaveButton.active = false;
 
+        this.hubButton = Button.builder(Component.literal("Realm Hub"), _ -> this.openHub()).build();
+        this.hubButton.active = false;
+
         final Button inviteButton = Button.builder(Component.translatable("bedrock_realms.viafabricplus.invite"), _ ->
             new AcceptInvitationCodeScreen(this::acceptInvite).open(this)).build();
         inviteButton.active = service != null;
 
         this.refreshButton = Button.builder(Component.translatable("bedrock_realms.viafabricplus.refresh"), _ -> this.refresh()).build();
-        this.addFooter(this.joinButton, this.leaveButton, inviteButton, this.refreshButton);
+        this.addFooter(this.joinButton, this.hubButton, this.leaveButton, inviteButton, this.refreshButton);
 
         super.init();
     }
@@ -113,6 +126,7 @@ public final class BedrockRealmsScreen extends VFPScreen {
         final boolean selected = this.list.getFocused() instanceof SlotEntry;
         this.joinButton.active = selected && !this.joining;
         this.leaveButton.active = selected && !this.joining;
+        this.hubButton.active = selected && !this.joining;
         this.refreshButton.active = !loading && !this.joining;
     }
 
@@ -146,6 +160,13 @@ public final class BedrockRealmsScreen extends VFPScreen {
                 service = realmsService;
                 loading = false;
                 Minecraft.getInstance().execute(this::rebuildWidgets);
+                final List<String> owners = worlds.stream().map(world -> world.getOwnerUidOr(""))
+                    .filter(id -> id.matches("[0-9]+"))
+                    .distinct().limit(100).toList();
+                BedrockSocialService.profileNames(account, owners).exceptionally(error -> {
+                    ViaFabricPlusBedrock.impl().logger().debug("Could not load Realm owner pictures", error);
+                    return java.util.Map.of();
+                });
             }).exceptionally(throwable -> this.fail("Failed to load the realm worlds", throwable));
         }).exceptionally(throwable -> this.fail("Failed to check the realms availability", throwable));
     }
@@ -163,6 +184,66 @@ public final class BedrockRealmsScreen extends VFPScreen {
     private void join() {
         final RealmsServer realmsServer = ((SlotEntry) this.list.getFocused()).realmsServer;
         this.join(realmsServer);
+    }
+
+    private void openHub() {
+        final RealmsServer realm = ((SlotEntry) this.list.getFocused()).realmsServer;
+        final BedrockAuthManager account = ViaFabricPlusBedrock.impl().account().get();
+        if (account != null) {
+            new BedrockRealmHubScreen(realm, account).open(this);
+        }
+    }
+
+    private void renderRealmDetails(final GuiGraphicsExtractor graphics) {
+        if (this.width < 780 || !(this.list.getFocused() instanceof SlotEntry selected)) {
+            return;
+        }
+        final RealmsServer realm = selected.realmsServer;
+        final int x = this.width / 2 + ROW_WIDTH / 2 + 16;
+        final int panelWidth = this.width - x - 12;
+        final int top = CONTENT_TOP + 4;
+        final int bottom = this.height - FOOTER_HEIGHT - 5;
+        final int textX = x + 10;
+        final int textWidth = panelWidth - 20;
+        int y = top + 10;
+        final int availableHeight = bottom - top;
+        if (availableHeight >= 270) {
+            final int previewHeight = Math.min(110, Math.max(64, availableHeight - 230));
+            if (!BedrockRealmImages.drawPreview(graphics, realm.getRawResponse(), textX, y, textWidth, previewHeight)) {
+                graphics.centeredText(this.font, Component.translatable("bedrock_realms.viafabricplus.no_preview"),
+                    textX + textWidth / 2, y + (previewHeight - this.font.lineHeight) / 2, 0xFFAAAAAA);
+            }
+            y += previewHeight + 12;
+        }
+        BedrockPlayerImages.draw(graphics, realm.getOwnerUidOr(""), textX, y, 27);
+        y = this.detailLine(graphics, realm.getNameOr("Realm"), textX + 34, y, textWidth - 34, 0xFFFFFFFF, 16);
+        y = this.detailLine(graphics, "Owned by " + realm.getOwnerNameOr("Unknown"), textX + 34, y, textWidth - 34,
+            0xFFD0D2D5, 15);
+        y += 8;
+        y = this.detailLine(graphics, realm.getMotdOr("No description"), textX, y, textWidth, 0xFFD0D2D5, 28);
+        y += 8;
+        y = this.detailLine(graphics, "Status: " + (realm.isExpired() ? "Expired" : realm.getState()),
+            textX, y, textWidth, 0xFFFFFFFF, 14);
+        y = this.detailLine(graphics, "Players: " + realm.getMaxPlayers() + " maximum", textX, y, textWidth,
+            0xFFFFFFFF, 14);
+        y = this.detailLine(graphics, "World: " + realm.getWorldType(), textX, y, textWidth,
+            0xFFFFFFFF, 14);
+        if (!realm.getActiveVersionOr("").isBlank()) {
+            y = this.detailLine(graphics, "Version: " + realm.getActiveVersion(), textX, y, textWidth,
+                0xFFFFFFFF, 14);
+        }
+        if (realm.getDaysLeft() >= 0) {
+            this.detailLine(graphics, "Subscription: " + realm.getDaysLeft() + " days left", textX, y,
+                textWidth, 0xFFFFFFFF, 14);
+        }
+    }
+
+    private int detailLine(final GuiGraphicsExtractor graphics, final String value, final int x,
+                           final int y, final int width, final int color, final int spacing) {
+        final String clipped = this.font.width(value) <= width ? value
+            : this.font.plainSubstrByWidth(value, Math.max(0, width - this.font.width("…"))) + "…";
+        graphics.text(this.font, clipped, x, y, color);
+        return y + spacing;
     }
 
     private void join(final RealmsServer realmsServer) {
@@ -189,7 +270,7 @@ public final class BedrockRealmsScreen extends VFPScreen {
                 } else if (BedrockRealmsError.timelineOptInRequired(error)) {
                     final BedrockAuthManager account = ViaFabricPlusBedrock.impl().account().get();
                     if (account != null) {
-                        new BedrockRealmTimelineScreen(account, realmsServer, () -> this.join(realmsServer)).open(this);
+                        new BedrockRealmTimelineScreen(service, realmsServer, () -> this.join(realmsServer)).open(this);
                     } else {
                         this.fail("Bedrock account was removed while joining the realm", error);
                     }
@@ -241,12 +322,15 @@ public final class BedrockRealmsScreen extends VFPScreen {
         return null;
     }
 
-    public static class SlotList extends VFPList {
+    public static class SlotList extends ActionList {
 
         private static double scrollAmount;
+        private final BedrockRealmsScreen screen;
 
-        public SlotList(final Minecraft minecraftClient, final int width, final int height, final int top, final int bottom, final int entryHeight) {
+        public SlotList(final BedrockRealmsScreen screen, final Minecraft minecraftClient, final int width, final int height,
+                        final int top, final int bottom, final int entryHeight) {
             super(minecraftClient, width, height, top, bottom, entryHeight);
+            this.screen = screen;
 
             if (realmsServers == null) { // The realms are either still loading, unavailable or the request failed
                 this.addEntry(new VFPTextEntry(status));
@@ -265,6 +349,15 @@ public final class BedrockRealmsScreen extends VFPScreen {
         @Override
         public int getRowWidth() {
             return Math.min(ROW_WIDTH, this.width - 20);
+        }
+
+        @Override
+        protected boolean activate(final VFPListEntry entry) {
+            if (entry instanceof SlotEntry realm && !this.screen.joining) {
+                this.screen.join(realm.realmsServer);
+                return true;
+            }
+            return false;
         }
 
         @Override
@@ -292,6 +385,10 @@ public final class BedrockRealmsScreen extends VFPScreen {
         @Override
         public void mappedRender(final GuiGraphicsExtractor context, final int entryWidth, final int entryHeight) {
             final Font font = Minecraft.getInstance().font;
+            final int portrait = Math.min(25, entryHeight - 5);
+            final int textX = SLOT_MARGIN + portrait + 5;
+            BedrockPlayerImages.draw(context, this.realmsServer.getOwnerUidOr(""), SLOT_MARGIN,
+                (entryHeight - portrait) / 2, portrait);
 
             final StringBuilder name = new StringBuilder();
             final String ownerName = this.realmsServer.getOwnerName();
@@ -308,14 +405,15 @@ public final class BedrockRealmsScreen extends VFPScreen {
             name.append(" (").append(state).append(")");
 
             final String version = this.version();
-            final int availableWidth = entryWidth - font.width(version) - SLOT_MARGIN * 3 - 8;
-            context.text(font, fit(font, name.toString(), availableWidth), SLOT_MARGIN, SLOT_MARGIN,
+            final int availableWidth = entryWidth - font.width(version) - textX - SLOT_MARGIN - 8;
+            context.text(font, fit(font, name.toString(), availableWidth), textX, SLOT_MARGIN,
                 this.slotList.getFocused() == this ? ACCENT_COLOR : -1);
             context.text(font, version, entryWidth - font.width(version) - SLOT_MARGIN, SLOT_MARGIN, -1);
 
             final String motd = this.realmsServer.getMotd();
-            if (motd != null) {
-                this.renderScrollableText(context, Component.nullToEmpty(motd), 0);
+            if (motd != null && !motd.isBlank()) {
+                context.text(font, fit(font, motd, entryWidth - textX - SLOT_MARGIN), textX,
+                    entryHeight - font.lineHeight - SLOT_MARGIN, 0xFFD0D2D5);
             }
         }
 

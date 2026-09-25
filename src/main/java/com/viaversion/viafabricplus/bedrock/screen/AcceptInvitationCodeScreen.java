@@ -35,6 +35,7 @@ public final class AcceptInvitationCodeScreen extends VFPScreen {
     private static final int FIELD_HEIGHT = 20;
 
     private final Consumer<String> codeHandler;
+    private EditBox codeField;
 
     public AcceptInvitationCodeScreen(final Consumer<String> codeHandler) {
         super(Component.translatable("screen.viafabricplus.accept_invite"), true);
@@ -46,13 +47,16 @@ public final class AcceptInvitationCodeScreen extends VFPScreen {
     protected void init() {
         super.init();
 
-        final EditBox codeField = this.addRenderableWidget(new EditBox(this.font, (this.width - FIELD_WIDTH) / 2, this.height / 2 - FIELD_HEIGHT, FIELD_WIDTH, FIELD_HEIGHT, Component.empty()));
-        codeField.setHint(Component.translatable("base.viafabricplus.code"));
+        this.codeField = this.addRenderableWidget(new SubmitEditBox(this.font, (this.width - FIELD_WIDTH) / 2,
+            this.height / 2 - FIELD_HEIGHT, FIELD_WIDTH, FIELD_HEIGHT, Component.empty(), this::acceptCode));
+        this.codeField.setHint(Component.translatable("base.viafabricplus.code"));
 
-        this.addFooter(Button.builder(Component.translatable("base.viafabricplus.accept"), _ -> {
-            this.codeHandler.accept(codeField.getValue());
-            this.onClose();
-        }).build());
+        this.addFooter(Button.builder(Component.translatable("base.viafabricplus.accept"), _ -> this.acceptCode()).build());
+    }
+
+    private void acceptCode() {
+        this.codeHandler.accept(this.codeField.getValue());
+        this.onClose();
     }
 
     @Override

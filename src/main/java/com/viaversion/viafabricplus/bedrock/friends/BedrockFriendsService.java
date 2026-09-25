@@ -60,8 +60,8 @@ public final class BedrockFriendsService {
     public static CompletableFuture<List<FriendWorld>> worlds(final BedrockAuthManager account) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final XblXstsToken token = account.getXboxLiveXstsToken().refresh();
-                final String xuid = account.getXboxUserProfile().refresh().getId();
+                final XblXstsToken token = account.getXboxLiveXstsToken().getUpToDate();
+                final String xuid = account.getXboxUserProfile().getUpToDate().getId();
                 final JsonObject owners = new JsonObject();
                 final JsonObject people = new JsonObject();
                 people.addProperty("moniker", "people");
@@ -105,8 +105,8 @@ public final class BedrockFriendsService {
             RtaSubscription subscription = null;
             JoinedWorld joined = null;
             try {
-                final XblXstsToken token = account.getXboxLiveXstsToken().refresh();
-                final String xuid = account.getXboxUserProfile().refresh().getId();
+                final XblXstsToken token = account.getXboxLiveXstsToken().getUpToDate();
+                final String xuid = account.getXboxUserProfile().getUpToDate().getId();
                 subscription = RtaSubscription.open(token);
 
                 final JsonObject systemConstants = new JsonObject();
@@ -313,7 +313,7 @@ public final class BedrockFriendsService {
                 members.add("me", null);
                 final JsonObject body = new JsonObject();
                 body.add("members", members);
-                updateSession(this.sessionUri, body, this.account.getXboxLiveXstsToken().refresh());
+                updateSession(this.sessionUri, body, this.account.getXboxLiveXstsToken().getUpToDate());
             } catch (Exception ignored) {
                 // The session directory expires abandoned memberships when offline.
             } finally {
