@@ -57,7 +57,8 @@ public class BedrockRakNetStatusProtocol extends AbstractSimpleProtocol {
             if (!Arrays.equals(offlineMessageDataId, OFFLINE_MESSAGE_DATA_ID)) {
                 throw new IllegalStateException("Invalid offline message data id");
             }
-            final byte[] data = wrapper.read(Types.REMAINING_BYTES); // ping response data TODO: More testing needed
+            final int length = wrapper.read(Types.UNSIGNED_SHORT);
+            final byte[] data = wrapper.read(new FixedByteArrayType(length)); // ping response data
 
             final JsonObject statusResponse = new JsonObject();
             statusResponse.addProperty("description", "");
@@ -76,7 +77,7 @@ public class BedrockRakNetStatusProtocol extends AbstractSimpleProtocol {
             players.add("sample", samples);
             statusResponse.add("players", players);
 
-            final String[] splitData = new String(data, StandardCharsets.UTF_8).split(";");
+            final String[] splitData = new String(data, StandardCharsets.UTF_8).split(";", -1);
             switch (splitData.length) {
                 default:
                 case 12: // IPv6 Port
