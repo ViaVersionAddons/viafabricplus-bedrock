@@ -36,7 +36,7 @@ public abstract class MixinChunkTracker implements IChunkTracker {
 
     @Shadow
     @Final
-    private PriorityQueue<?> subChunkRequests;
+    private Set<?> subChunkRequests;
 
     @Shadow
     @Final
