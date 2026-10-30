@@ -19,9 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen.settings;
+package com.viaversion.viafabricplus.bedrock.screen.impl.settings;
 
-import com.viaversion.viafabricplus.bedrock.settings.ActionSetting;
+import com.viaversion.viafabricplus.bedrock.settings.base.ActionSetting;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.screen.base.list.VFPListEntry;
 import net.minecraft.ChatFormatting;

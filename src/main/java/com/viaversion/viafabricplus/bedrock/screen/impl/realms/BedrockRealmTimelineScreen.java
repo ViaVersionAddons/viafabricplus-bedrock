@@ -19,11 +19,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen;
+package com.viaversion.viafabricplus.bedrock.screen.impl.realms;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
-import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmTimelineService;
-import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmsError;
+import com.viaversion.viafabricplus.bedrock.features.realms.BedrockRealmTimelineService;
+import com.viaversion.viafabricplus.bedrock.features.realms.BedrockRealmsError;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -35,7 +35,6 @@ import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.minecraftauth.extra.realms.model.RealmsServer;
 import org.jspecify.annotations.NonNull;
 
-/** Explains the Realm's Timeline requirement before changing the member's own consent. */
 public final class BedrockRealmTimelineScreen extends VFPScreen {
 
     private final BedrockAuthManager account;

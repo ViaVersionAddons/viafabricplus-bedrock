@@ -24,9 +24,6 @@ package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-/**
- * Carries a NetherNet address through vanilla's code, which only knows {@link InetSocketAddress}.
- */
 public final class NetherNetInetSocketAddress extends InetSocketAddress {
 
     private final SocketAddress netherNetAddress;

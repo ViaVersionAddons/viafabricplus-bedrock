@@ -19,30 +19,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.protocoltranslator.platform;
+package com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.viabedrock;
 
-import com.viaversion.viaversion.api.Via;
 import java.io.File;
 import java.util.logging.Logger;
-import net.raphimc.viabedrock.platform.ViaBedrockPlatform;
+import net.raphimc.viabedrock.ViaBedrockConfig;
 
-public final class ViaFabricPlusViaBedrockPlatform implements ViaBedrockPlatform {
+public final class ViaFabricPlusViaBedrockConfig extends ViaBedrockConfig {
 
-    private final Logger logger;
-
-    public ViaFabricPlusViaBedrockPlatform() {
-        this.logger = Via.getPlatform().createLogger("ViaBedrock");
-        this.init(new ViaFabricPlusViaBedrockConfig(new File(this.getDataFolder(), "viabedrock.yml"), this.logger));
-    }
-
-    @Override
-    public Logger getLogger() {
-        return this.logger;
-    }
-
-    @Override
-    public File getDataFolder() {
-        return Via.getPlatform().getDataFolder();
+    public ViaFabricPlusViaBedrockConfig(final File configFile, final Logger logger) {
+        super(configFile, logger);
     }
 
 }

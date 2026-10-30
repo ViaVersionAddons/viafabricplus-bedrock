@@ -19,15 +19,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen;
+package com.viaversion.viafabricplus.bedrock.screen.impl.friends;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockFriendsService;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockFriendsService.FriendWorld;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService.FriendRequests;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService.SocialUser;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockXboxError;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockFriendsService.FriendWorld;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockFriendsService;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockSocialService.FriendRequests;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockSocialService.SocialUser;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockSocialService;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockXboxError;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.BedrockConnectionUtil;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.screen.base.list.VFPList;
@@ -48,7 +48,6 @@ import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
-/** Xbox friends, requests, player search, and joinable Bedrock worlds. */
 public final class BedrockFriendsScreen extends VFPScreen {
 
     public static final Component TITLE = Component.translatable("screen.viafabricplus.bedrock_friends");
@@ -407,6 +406,20 @@ public final class BedrockFriendsScreen extends VFPScreen {
         return null;
     }
 
+    private static String fit(final Font font, final String value, final int availableWidth) {
+        if (availableWidth <= 0) {
+            return "";
+        }
+        if (font.width(value) <= availableWidth) {
+            return value;
+        }
+        final String ellipsis = "…";
+        if (font.width(ellipsis) > availableWidth) {
+            return "";
+        }
+        return font.plainSubstrByWidth(value, availableWidth - font.width(ellipsis)) + ellipsis;
+    }
+
     private final class SlotList extends VFPList {
 
         private static double scrollAmount;
@@ -582,20 +595,6 @@ public final class BedrockFriendsScreen extends VFPScreen {
                 SLOT_MARGIN + font.lineHeight + 4, SECONDARY_COLOR);
         }
 
-    }
-
-    private static String fit(final Font font, final String value, final int availableWidth) {
-        if (availableWidth <= 0) {
-            return "";
-        }
-        if (font.width(value) <= availableWidth) {
-            return value;
-        }
-        final String ellipsis = "…";
-        if (font.width(ellipsis) > availableWidth) {
-            return "";
-        }
-        return font.plainSubstrByWidth(value, availableWidth - font.width(ellipsis)) + ellipsis;
     }
 
 }

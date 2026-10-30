@@ -23,11 +23,11 @@ package com.viaversion.viafabricplus.bedrock;
 
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.api.entrypoint.ViaFabricPlusEntrypoint;
-import com.viaversion.viafabricplus.bedrock.account.BedrockAccount;
-import com.viaversion.viafabricplus.bedrock.friends.FriendWorldSkinProvider;
-import com.viaversion.viafabricplus.bedrock.protocoltranslator.platform.ViaFabricPlusNettyPipelineProvider;
-import com.viaversion.viafabricplus.bedrock.protocoltranslator.platform.ViaFabricPlusViaBedrockPlatform;
-import com.viaversion.viafabricplus.bedrock.settings.BedrockSettings;
+import com.viaversion.viafabricplus.bedrock.features.global.BedrockAccount;
+import com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.platform.ViaFabricPlusViaBedrockPlatform;
+import com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.provider.viabedrock.ViaFabricPlusNettyPipelineProvider;
+import com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.provider.viabedrock.ViaFabricPlusSkinProvider;
+import com.viaversion.viafabricplus.bedrock.settings.impl.BedrockSettings;
 import com.viaversion.viaversion.api.Via;
 import net.raphimc.viabedrock.protocol.provider.NettyPipelineProvider;
 import net.raphimc.viabedrock.protocol.provider.SkinProvider;
@@ -57,7 +57,7 @@ public final class ViaFabricPlusBedrock implements ViaFabricPlusEntrypoint {
     public void onPostProtocolTranslationLoading() {
         new ViaFabricPlusViaBedrockPlatform();
         Via.getManager().getProviders().use(NettyPipelineProvider.class, new ViaFabricPlusNettyPipelineProvider());
-        Via.getManager().getProviders().use(SkinProvider.class, new FriendWorldSkinProvider());
+        Via.getManager().getProviders().use(SkinProvider.class, new ViaFabricPlusSkinProvider());
     }
 
     public static ViaFabricPlusBedrock impl() {

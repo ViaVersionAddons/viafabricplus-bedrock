@@ -23,7 +23,6 @@ package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 
 import java.net.SocketAddress;
 
-/** A LAN-discovered NetherNet endpoint. */
 public final class NetherNetLanAddress extends SocketAddress {
 
     private final String host;

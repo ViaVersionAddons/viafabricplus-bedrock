@@ -58,9 +58,7 @@ public abstract class MixinBlockBehaviour_Properties {
         }
     }
 
-    /**
-     * Bedrock position hash algorithm. Only uses X and Z coordinates (Y is NOT used).
-     */
+    // Bedrock's position hash only uses the X and Z coordinates
     @Unique
     private static long viaFabricPlusBedrock$positionHash(final int x, final int z) {
         // Step 1: Initial hash from X and Z
@@ -72,17 +70,13 @@ public abstract class MixinBlockBehaviour_Properties {
         return (int) temp ^ 0x6A09E667F3BCC909L;
     }
 
-    /**
-     * Converts a random long to a float in [0, 1) the way Bedrock does: (random >>> 40) * 2^-24.
-     */
+    // Same as Bedrock: (random >>> 40) * 2^-24, giving a float in [0, 1)
     @Unique
     private static float viaFabricPlusBedrock$randomToFloat(final long random) {
         return (random >>> 40) * 5.9604645e-8F;
     }
 
-    /**
-     * Calculates an offset value with quantization to discrete steps (Bedrock algorithm).
-     */
+    // Bedrock quantizes the offset to discrete steps
     @Unique
     private static float viaFabricPlusBedrock$calculateOffsetValue(final float min, final float max, final float random) {
         if (min >= max) {
@@ -101,9 +95,6 @@ public abstract class MixinBlockBehaviour_Properties {
         }
     }
 
-    /**
-     * Calculates the random offset for a given position.
-     */
     @Unique
     private static Vec3 viaFabricPlusBedrock$randomlyModifyPosition(final BlockPos pos, final BlockBehaviour.OffsetType type) {
         // Use Bedrock's custom position hash

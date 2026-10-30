@@ -19,21 +19,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.realms;
+package com.viaversion.viafabricplus.bedrock.features.realms;
 
+import java.net.SocketTimeoutException;
 import java.net.http.HttpTimeoutException;
 import net.lenni0451.commons.httpclient.exceptions.HttpRequestException;
 import net.minecraft.network.chat.Component;
 import net.raphimc.minecraftauth.extra.realms.exception.RealmsRequestException;
 import org.jetbrains.annotations.Nullable;
 
-/** Turns Realms responses into short, useful messages while preserving unknown service errors. */
 public final class BedrockRealmsError {
 
     private static final int TIMELINE_OPT_IN_REQUIRED = 6015;
-
-    private BedrockRealmsError() {
-    }
 
     public static @Nullable RealmsRequestException request(final Throwable error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
@@ -99,7 +96,7 @@ public final class BedrockRealmsError {
                 return Component.translatable("bedrock_realms.viafabricplus.http_error", status,
                     shorten(requestException.getMessage()));
             }
-            if (cause instanceof HttpTimeoutException || cause instanceof java.net.SocketTimeoutException) {
+            if (cause instanceof HttpTimeoutException || cause instanceof SocketTimeoutException) {
                 return Component.translatable("bedrock_realms.viafabricplus.timeout");
             }
         }

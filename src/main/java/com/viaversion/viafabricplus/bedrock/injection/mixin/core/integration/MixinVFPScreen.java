@@ -22,8 +22,8 @@
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
-import com.viaversion.viafabricplus.bedrock.screen.BedrockFriendsScreen;
-import com.viaversion.viafabricplus.bedrock.screen.BedrockRealmsScreen;
+import com.viaversion.viafabricplus.bedrock.screen.impl.friends.BedrockFriendsScreen;
+import com.viaversion.viafabricplus.bedrock.screen.impl.realms.BedrockRealmsScreen;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.screen.impl.ViaFabricPlusScreen;
 import java.util.Arrays;

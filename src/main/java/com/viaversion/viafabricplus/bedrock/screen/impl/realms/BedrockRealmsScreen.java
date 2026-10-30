@@ -19,18 +19,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen;
+package com.viaversion.viafabricplus.bedrock.screen.impl.realms;
 
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.features.realms.BedrockRealmsError;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.BedrockConnectionUtil;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetJsonRpcAddress;
-import com.viaversion.viafabricplus.bedrock.realms.BedrockRealmsError;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.screen.base.list.VFPList;
 import com.viaversion.viafabricplus.screen.base.list.VFPListEntry;
 import com.viaversion.viafabricplus.screen.base.list.VFPTextEntry;
 import com.viaversion.viafabricplus.util.network.ConnectionUtil;
-import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -45,6 +44,7 @@ import net.raphimc.minecraftauth.extra.realms.model.RealmsServer;
 import net.raphimc.minecraftauth.extra.realms.service.impl.BedrockRealmsService;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
+import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
@@ -70,9 +70,6 @@ public final class BedrockRealmsScreen extends VFPScreen {
         super(TITLE, true);
     }
 
-    /**
-     * Drops the cached realms so the next opened screen requests them again.
-     */
     public static void invalidate() {
         realmsServers = null;
         service = null;

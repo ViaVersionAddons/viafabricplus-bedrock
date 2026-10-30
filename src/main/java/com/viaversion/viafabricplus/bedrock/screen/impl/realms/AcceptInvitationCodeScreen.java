@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen;
+package com.viaversion.viafabricplus.bedrock.screen.impl.realms;
 
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import java.util.function.Consumer;

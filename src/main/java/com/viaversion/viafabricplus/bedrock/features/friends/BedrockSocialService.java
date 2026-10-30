@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.friends;
+package com.viaversion.viafabricplus.bedrock.features.friends;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -38,16 +38,12 @@ import java.util.concurrent.CompletableFuture;
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.minecraftauth.xbl.model.XblXstsToken;
 
-/** Xbox Live friends, player search, and mutual friend requests. */
 public final class BedrockSocialService {
 
     private static final URI PEOPLE = URI.create("https://peoplehub.xboxlive.com/users/me/people/");
     private static final URI SOCIAL = URI.create("https://social.xboxlive.com/users/me/people/friends/v2/");
     private static final String DECORATIONS = "/decoration/bio,detail,multiplayerSummary,preferredColor,presenceDetail";
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-
-    private BedrockSocialService() {
-    }
 
     public static CompletableFuture<List<SocialUser>> friends(final BedrockAuthManager account) {
         return CompletableFuture.supplyAsync(() -> {
@@ -93,7 +89,7 @@ public final class BedrockSocialService {
             try {
                 final URI uri = SOCIAL.resolve("xuid(" + xuid + ")" + (add ? "" : "?deleteRelationships=friends"));
                 final HttpRequest request = HttpRequest.newBuilder(uri)
-                    // Xbox requires Content-Length: 0 here; Java's HTTP/2 request omits it and receives 411.
+                    // Xbox requires Content-Length: 0 here; Java's HTTP/2 request omits it and receives 411
                     .version(HttpClient.Version.HTTP_1_1)
                     .timeout(Duration.ofSeconds(15))
                     .header("Authorization", account.getXboxLiveXstsToken().refresh().getAuthorizationHeader())

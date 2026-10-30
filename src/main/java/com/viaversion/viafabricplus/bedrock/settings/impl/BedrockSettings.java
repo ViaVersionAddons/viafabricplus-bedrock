@@ -19,12 +19,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.settings;
+package com.viaversion.viafabricplus.bedrock.settings.impl;
 
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.api.settings.base.BooleanSetting;
 import com.viaversion.viafabricplus.api.settings.base.SettingGroup;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.settings.base.ActionSetting;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import java.util.Objects;
 import net.minecraft.network.chat.Component;

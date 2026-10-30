@@ -21,11 +21,11 @@
 
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetAddressParser;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.viaversion.viafabricplus.injection.access.core.IServerData;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import java.net.URI;

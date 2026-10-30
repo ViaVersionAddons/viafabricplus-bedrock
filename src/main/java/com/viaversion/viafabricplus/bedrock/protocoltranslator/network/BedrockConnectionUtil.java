@@ -32,11 +32,6 @@ import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 
 public final class BedrockConnectionUtil {
 
-    /**
-     * Connects to a Bedrock world reachable via NetherNet.
-     *
-     * @param address the NetherNet address of the world
-     */
     public static void connectNetherNet(final SocketAddress address) {
         final ServerAddress serverAddress = ServerAddress.parseString("nethernet.viafabricplus.localhost");
         ((IServerAddress) (Object) serverAddress).viaFabricPlusBedrock$setNetherNetAddress(address);

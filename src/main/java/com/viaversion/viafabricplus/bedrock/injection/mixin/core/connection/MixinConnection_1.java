@@ -23,8 +23,6 @@ package com.viaversion.viafabricplus.bedrock.injection.mixin.core.connection;
 
 import com.viaversion.viafabricplus.injection.access.core.IConnection;
 import com.viaversion.viaversion.platform.ViaDecodeHandler;
-import org.cloudburstmc.netty.channel.nethernet.config.NetherChannelOption;
-import org.cloudburstmc.netty.channel.nethernet.NetherNetClientChannel;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelOption;
@@ -36,6 +34,8 @@ import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import net.raphimc.viabedrock.netty.BatchLengthCodec;
 import net.raphimc.viabedrock.netty.DisconnectHandler;
 import net.raphimc.viabedrock.netty.PacketCodec;
+import org.cloudburstmc.netty.channel.nethernet.NetherNetClientChannel;
+import org.cloudburstmc.netty.channel.nethernet.config.NetherChannelOption;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -64,8 +64,7 @@ public abstract class MixinConnection_1 {
 
         // ViaBedrock, added around the Via handlers ViaFabricPlus put into the pipeline before
         final ChannelPipeline pipeline = channel.pipeline();
-        // Native transport liveness continues while game packets pause at resource or Store prompts.
-        // NetherNet reports the reliable data channel closing.
+        // NetherNet reports the data channel closing itself, the read timeout would kick while game packets pause at resource or store prompts
         if (channel instanceof NetherNetClientChannel && pipeline.get(HandlerNames.TIMEOUT) instanceof ReadTimeoutHandler) {
             pipeline.remove(HandlerNames.TIMEOUT);
         }

@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.friends;
+package com.viaversion.viafabricplus.bedrock.features.friends;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
@@ -45,7 +46,6 @@ import net.raphimc.minecraftauth.xbl.model.XblXstsToken;
 import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 import org.jetbrains.annotations.Nullable;
 
-/** Xbox Live activity discovery and membership for player hosted Bedrock worlds. */
 public final class BedrockFriendsService {
 
     private static final URI DIRECTORY = URI.create("https://sessiondirectory.xboxlive.com/");
@@ -53,9 +53,6 @@ public final class BedrockFriendsService {
     private static final String SCID = "4fc10100-5f7a-4470-899b-280835760c07";
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     private static final AtomicReference<JoinedWorld> CURRENT_WORLD = new AtomicReference<>();
-
-    private BedrockFriendsService() {
-    }
 
     public static CompletableFuture<List<FriendWorld>> worlds(final BedrockAuthManager account) {
         return CompletableFuture.supplyAsync(() -> {
@@ -281,6 +278,7 @@ public final class BedrockFriendsService {
     }
 
     public static final class JoinedWorld implements AutoCloseable {
+
         private final URI sessionUri;
         private final BedrockAuthManager account;
         private final RtaSubscription subscription;
@@ -315,14 +313,16 @@ public final class BedrockFriendsService {
                 body.add("members", members);
                 updateSession(this.sessionUri, body, this.account.getXboxLiveXstsToken().refresh());
             } catch (Exception ignored) {
-                // The session directory expires abandoned memberships when offline.
+                // The session directory expires abandoned memberships when offline
             } finally {
                 this.subscription.close();
             }
         }
+
     }
 
     private static final class RtaSubscription implements WebSocket.Listener, AutoCloseable {
+
         private final CompletableFuture<String> connectionId = new CompletableFuture<>();
         private final StringBuilder message = new StringBuilder();
         private WebSocket socket;
@@ -356,7 +356,7 @@ public final class BedrockFriendsService {
         }
 
         @Override
-        public java.util.concurrent.CompletionStage<?> onText(final WebSocket webSocket, final CharSequence data, final boolean last) {
+        public CompletionStage<?> onText(final WebSocket webSocket, final CharSequence data, final boolean last) {
             this.message.append(data);
             if (last) {
                 try {
@@ -388,6 +388,7 @@ public final class BedrockFriendsService {
                 this.socket.sendClose(WebSocket.NORMAL_CLOSURE, "");
             }
         }
+
     }
 
 }

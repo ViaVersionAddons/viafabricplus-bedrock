@@ -19,13 +19,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.account;
+package com.viaversion.viafabricplus.bedrock.features.global;
 
 import com.mojang.blaze3d.Blaze3D;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockFriendsService;
 import com.viaversion.viafabricplus.bedrock.injection.access.IConfirmScreen;
-import com.viaversion.viafabricplus.bedrock.friends.BedrockFriendsService;
-import com.viaversion.viafabricplus.bedrock.screen.BedrockRealmsScreen;
+import com.viaversion.viafabricplus.bedrock.screen.impl.realms.BedrockRealmsScreen;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import com.viaversion.viafabricplus.util.JsonSave;
 import java.net.URI;

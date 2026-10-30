@@ -27,11 +27,7 @@ import java.util.Locale;
 import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 import org.jetbrains.annotations.Nullable;
 
-/** Parses the address schemes also accepted by ViaProxy. */
 public final class NetherNetAddressParser {
-
-    private NetherNetAddressParser() {
-    }
 
     public static @Nullable SocketAddress parse(final String input) {
         final URI uri;

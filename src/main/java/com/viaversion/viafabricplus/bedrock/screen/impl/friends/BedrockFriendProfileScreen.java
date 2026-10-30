@@ -19,15 +19,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.screen;
+package com.viaversion.viafabricplus.bedrock.screen.impl.friends;
 
-import com.viaversion.viafabricplus.bedrock.friends.BedrockSocialService.SocialUser;
+import com.viaversion.viafabricplus.bedrock.features.friends.BedrockSocialService.SocialUser;
 import com.viaversion.viafabricplus.screen.base.VFPScreen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 
-/** A compact Xbox profile using the details already returned by PeopleHub. */
 public final class BedrockFriendProfileScreen extends VFPScreen {
 
     private final SocialUser user;

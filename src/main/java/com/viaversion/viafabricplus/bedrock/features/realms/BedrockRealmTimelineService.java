@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.realms;
+package com.viaversion.viafabricplus.bedrock.features.realms;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -33,13 +33,9 @@ import java.util.concurrent.CompletableFuture;
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
 
-/** The member's own Realms Timeline consent, separate from the owner's Realm settings. */
 public final class BedrockRealmTimelineService {
 
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-
-    private BedrockRealmTimelineService() {
-    }
 
     public static CompletableFuture<Boolean> isOptedIn(final BedrockAuthManager account, final long realmId) {
         return CompletableFuture.supplyAsync(() -> {
@@ -93,7 +89,7 @@ public final class BedrockRealmTimelineService {
                     + " (code " + body.get("errorCode").getAsInt() + ")");
             }
         } catch (RuntimeException ignored) {
-            // Realms does not return JSON for every HTTP error.
+            // Realms does not return JSON for every HTTP error
         }
         return new IOException(operation + " failed: HTTP " + response.statusCode());
     }

@@ -19,23 +19,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.friends;
+package com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.platform;
 
-import com.viaversion.viaversion.api.connection.UserConnection;
-import java.util.Map;
-import net.raphimc.viabedrock.protocol.provider.SkinProvider;
+import com.viaversion.viafabricplus.bedrock.protocoltranslator.impl.viabedrock.ViaFabricPlusViaBedrockConfig;
+import com.viaversion.viaversion.api.Via;
+import java.io.File;
+import java.util.logging.Logger;
+import net.raphimc.viabedrock.platform.ViaBedrockPlatform;
 
-/** Adds the host-issued session nonce to Bedrock's client data for friend worlds. */
-public final class FriendWorldSkinProvider extends SkinProvider {
+public final class ViaFabricPlusViaBedrockPlatform implements ViaBedrockPlatform {
+
+    private final Logger logger;
+
+    public ViaFabricPlusViaBedrockPlatform() {
+        this.logger = Via.getPlatform().createLogger("ViaBedrock");
+        this.init(new ViaFabricPlusViaBedrockConfig(new File(this.getDataFolder(), "viabedrock.yml"), this.logger));
+    }
 
     @Override
-    public Map<String, Object> getClientPlayerSkin(final UserConnection user) {
-        final Map<String, Object> claims = super.getClientPlayerSkin(user);
-        final String nonce = BedrockFriendsService.nonceFor(user.getChannel().remoteAddress());
-        if (nonce != null) {
-            claims.put("Nonce", nonce);
-        }
-        return claims;
+    public Logger getLogger() {
+        return this.logger;
+    }
+
+    @Override
+    public File getDataFolder() {
+        return Via.getPlatform().getDataFolder();
     }
 
 }

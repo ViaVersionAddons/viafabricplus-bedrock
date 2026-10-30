@@ -23,9 +23,6 @@ package com.viaversion.viafabricplus.bedrock.protocoltranslator.network;
 
 import org.cloudburstmc.netty.channel.nethernet.config.NetherNetAddress;
 
-/**
- * Marks a NetherNet address which has to be signaled via the Xbox JSON-RPC service.
- */
 public final class NetherNetJsonRpcAddress extends NetherNetAddress {
 
     public NetherNetJsonRpcAddress(final String networkId) {

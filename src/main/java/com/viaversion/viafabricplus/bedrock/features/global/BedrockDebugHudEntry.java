@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.hud;
+package com.viaversion.viafabricplus.bedrock.features.global;
 
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.injection.access.IChunkTracker;

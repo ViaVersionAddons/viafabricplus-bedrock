@@ -22,8 +22,8 @@
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
 import com.viaversion.viafabricplus.api.settings.base.Setting;
-import com.viaversion.viafabricplus.bedrock.settings.ActionSetting;
-import com.viaversion.viafabricplus.bedrock.screen.settings.ActionListEntry;
+import com.viaversion.viafabricplus.bedrock.screen.impl.settings.ActionListEntry;
+import com.viaversion.viafabricplus.bedrock.settings.base.ActionSetting;
 import com.viaversion.viafabricplus.screen.base.list.VFPListEntry;
 import com.viaversion.viafabricplus.screen.impl.SettingsScreen;
 import org.spongepowered.asm.mixin.Mixin;

@@ -19,16 +19,44 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.protocoltranslator.platform;
+package com.viaversion.viafabricplus.bedrock.settings.base;
 
-import java.io.File;
-import java.util.logging.Logger;
-import net.raphimc.viabedrock.ViaBedrockConfig;
+import com.google.gson.JsonObject;
+import com.viaversion.viafabricplus.api.settings.base.Setting;
+import java.util.function.Supplier;
+import net.minecraft.network.chat.Component;
 
-public final class ViaFabricPlusViaBedrockConfig extends ViaBedrockConfig {
+public final class ActionSetting implements Setting {
 
-    public ViaFabricPlusViaBedrockConfig(final File configFile, final Logger logger) {
-        super(configFile, logger);
+    private final Component name;
+    private final Supplier<Component> value;
+    private final Runnable action;
+
+    public ActionSetting(final Component name, final Supplier<Component> value, final Runnable action) {
+        this.name = name;
+        this.value = value;
+        this.action = action;
+    }
+
+    public Component value() {
+        return this.value.get();
+    }
+
+    public void run() {
+        this.action.run();
+    }
+
+    @Override
+    public Component name() {
+        return this.name;
+    }
+
+    @Override
+    public void write(final JsonObject object) {
+    }
+
+    @Override
+    public void read(final JsonObject object) {
     }
 
 }

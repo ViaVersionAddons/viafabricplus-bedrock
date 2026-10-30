@@ -21,7 +21,7 @@
 
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
-import com.viaversion.viafabricplus.bedrock.hud.BedrockDebugHudEntry;
+import com.viaversion.viafabricplus.bedrock.features.global.BedrockDebugHudEntry;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;

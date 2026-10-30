@@ -35,10 +35,7 @@ import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/**
- * Bedrock uses the pre 1.13 fluid handling. ViaFabricPlus already implements that for the Java versions, but
- * claims the instructions its own injections need, so the same behaviour is reached from other injection points.
- */
+// Bedrock uses the pre 1.13 fluid handling, ViaFabricPlus' own injections already claim its targets so other ones are used
 @Mixin(EntityFluidInteraction.class)
 public abstract class MixinEntityFluidInteraction {
 

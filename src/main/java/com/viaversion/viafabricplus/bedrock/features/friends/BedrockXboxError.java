@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.viaversion.viafabricplus.bedrock.friends;
+package com.viaversion.viafabricplus.bedrock.features.friends;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -30,11 +30,7 @@ import java.net.http.HttpTimeoutException;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-/** Formats Xbox PeopleHub, Social, and multiplayer session errors for the Friends screen. */
 public final class BedrockXboxError {
-
-    private BedrockXboxError() {
-    }
 
     public static XboxRequestException response(final String operation, final HttpResponse<String> response) {
         String code = "";
@@ -49,7 +45,7 @@ public final class BedrockXboxError {
                 message = first(body, "message", "errorMessage", "errorMsg");
             }
         } catch (RuntimeException ignored) {
-            // Some Xbox endpoints send an empty body for an HTTP error.
+            // Some Xbox endpoints send an empty body for an HTTP error
         }
         return new XboxRequestException(operation, response.statusCode(), code, message);
     }
