@@ -26,8 +26,6 @@ import io.netty.channel.Channel;
 import javax.crypto.SecretKey;
 import net.minecraft.network.HandlerNames;
 import net.raphimc.viabedrock.netty.CompressionCodec;
-import net.raphimc.viabedrock.netty.raknet.AesEncryptionCodec;
-import net.raphimc.viabedrock.netty.raknet.MessageCodec;
 import net.raphimc.viabedrock.protocol.data.enums.bedrock.generated.PacketCompressionAlgorithm;
 import net.raphimc.viabedrock.protocol.provider.NettyPipelineProvider;
 
@@ -45,18 +43,7 @@ public final class ViaFabricPlusNettyPipelineProvider extends NettyPipelineProvi
 
     @Override
     public void enableEncryption(final UserConnection user, final SecretKey key) {
-        final Channel channel = user.getChannel();
-        if (channel.pipeline().names().contains(HandlerNames.ENCRYPT)) {
-            throw new IllegalStateException("Encryption already enabled");
-        }
-
-        if (channel.pipeline().get(MessageCodec.NAME) != null) { // Only RakNet connections are encrypted
-            try {
-                channel.pipeline().addAfter(MessageCodec.NAME, HandlerNames.ENCRYPT, new AesEncryptionCodec(key));
-            } catch (final Throwable e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // Not needed for NetherNet
     }
 
 }

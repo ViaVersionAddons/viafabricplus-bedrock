@@ -26,14 +26,12 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
-import com.viaversion.viafabricplus.bedrock.injection.access.IEventLoopGroupHolder;
 import com.viaversion.viafabricplus.injection.access.core.IConnection;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.util.UUID;
 import net.minecraft.network.Connection;
-import net.minecraft.server.network.EventLoopGroupHolder;
 import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
 import net.raphimc.minecraftauth.bedrock.model.MinecraftMultiplayerToken;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
@@ -41,7 +39,6 @@ import net.raphimc.viabedrock.protocol.storage.AuthData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(targets = "net.minecraft.client.gui.screens.ConnectScreen$1")
@@ -49,15 +46,8 @@ public abstract class MixinConnectScreen_1 {
 
     @WrapOperation(method = "run", at = @At(value = "INVOKE", target = "Ljava/lang/Exception;getMessage()Ljava/lang/String;", remap = false))
     private String handleNullExceptionMessage(final Exception instance, final Operation<String> original) {
-        // Vanilla doesn't have these cases, but we do because of RakNet and other modifications to the Netty pipeline
+        // Vanilla doesn't have these cases, but we do because of NetherNet and other modifications to the Netty pipeline
         return instance.getMessage() == null ? "" : original.call(instance);
-    }
-
-    @Redirect(method = "run", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/EventLoopGroupHolder;remote(Z)Lnet/minecraft/server/network/EventLoopGroupHolder;"))
-    private EventLoopGroupHolder markAsConnecting(final boolean allowNativeTransport) {
-        final EventLoopGroupHolder holder = EventLoopGroupHolder.remote(allowNativeTransport);
-        ((IEventLoopGroupHolder) holder).viaFabricPlusBedrock$setConnecting(true);
-        return holder;
     }
 
     @Inject(method = "run", at = @At(value = "INVOKE", target = "Lio/netty/channel/ChannelFuture;syncUninterruptibly()Lio/netty/channel/ChannelFuture;", remap = false, shift = At.Shift.AFTER))

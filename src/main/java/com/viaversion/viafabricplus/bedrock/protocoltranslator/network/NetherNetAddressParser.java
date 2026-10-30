@@ -51,7 +51,6 @@ public final class NetherNetAddressParser {
         }
 
         return switch (scheme.toLowerCase(Locale.ROOT)) {
-            case "nethernet" -> uri.getHost() == null || !validPort(uri) ? null : new NetherNetHttpAddress(uri.getHost(), port(uri, 19132));
             case "nethernet-lan" -> uri.getHost() == null || !validPort(uri) ? null : new NetherNetLanAddress(uri.getHost(), port(uri, 7551));
             case "nethernet-xbox" -> authority.equals(uri.getHost()) ? new NetherNetAddress(authority) : null;
             case "nethernet-xbox-json-rpc" -> authority.equals(uri.getHost()) ? new NetherNetJsonRpcAddress(authority) : null;

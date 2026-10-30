@@ -9,8 +9,6 @@
     "jjwt.MixinDefaultJwtParserBuilder",
     "core.access.MixinChunkTracker",
     "core.access.MixinConfirmScreen",
-    "core.access.MixinEventLoopGroupHolder",
-    "core.access.MixinRakSessionCodec",
     "core.access.MixinServerAddress",
     "core.connection.MixinConnectScreen_1",
     "core.connection.MixinConnection",

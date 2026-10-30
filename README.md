@@ -22,11 +22,11 @@ The `Worlds` tab lists joinable worlds hosted by Xbox friends. Select a world an
 select a friend with a joinable world from the `Friends` tab. The screen checks the world's protocol before joining.
 Use `Refresh` to update the lists.
 
-To join a NetherNet server directly, select the Bedrock version and enter one of these address forms:
+Bedrock servers are joined via NetherNet. Select the Bedrock version and enter one of these address forms:
 
 | Address | Signaling service |
 | --- | --- |
-| `nethernet://host[:port]` | HTTP, default port 19132 |
+| `host[:port]` | HTTP, default port 19132 |
 | `nethernet-lan://host[:port]` | LAN discovery, default port 7551 |
 | `nethernet-xbox://network-id` | Xbox WebSocket |
 | `nethernet-xbox-json-rpc://network-id` | Xbox JSON-RPC |

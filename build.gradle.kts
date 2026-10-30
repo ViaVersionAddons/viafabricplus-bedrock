@@ -16,9 +16,6 @@ dependencies {
     jarInJar(libs.minecraftauth) {
         exclude(group = "com.google.code.gson", module = "gson")
     }
-    jarInJar(libs.netty.transport.raknet) {
-        exclude(group = "io.netty")
-    }
     jarInJar(libs.netty.transport.nethernet) {
         exclude(group = "io.netty")
         exclude(group = "org.bouncycastle")

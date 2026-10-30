@@ -30,17 +30,12 @@ import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.network.Connection;
 import net.minecraft.network.HandlerNames;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import net.raphimc.viabedrock.netty.BatchLengthCodec;
 import net.raphimc.viabedrock.netty.DisconnectHandler;
 import net.raphimc.viabedrock.netty.PacketCodec;
-import net.raphimc.viabedrock.netty.raknet.MessageCodec;
-import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
-import org.cloudburstmc.netty.channel.raknet.RakClientChannel;
-import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -63,15 +58,6 @@ public abstract class MixinConnection_1 {
         }
 
         final ChannelConfig config = channel.config();
-        // RakNet config
-        config.setOption(RakChannelOption.RAK_PROTOCOL_VERSION, ProtocolConstants.BEDROCK_RAKNET_PROTOCOL_VERSION);
-        config.setOption(RakChannelOption.RAK_COMPATIBILITY_MODE, true);
-        config.setOption(RakChannelOption.RAK_CLIENT_INTERNAL_ADDRESSES, 20);
-        config.setOption(RakChannelOption.RAK_TIME_BETWEEN_SEND_CONNECTION_ATTEMPTS_MS, 500);
-        config.setOption(RakChannelOption.RAK_CONNECT_TIMEOUT, config.getOption(ChannelOption.CONNECT_TIMEOUT_MILLIS).longValue());
-        config.setOption(RakChannelOption.RAK_SESSION_TIMEOUT, 30_000L);
-        config.setOption(RakChannelOption.RAK_GUID, ThreadLocalRandom.current().nextLong());
-
         // NetherNet config
         config.setOption(NetherChannelOption.NETHER_CLIENT_HANDSHAKE_TIMEOUT_MS, config.getOption(ChannelOption.CONNECT_TIMEOUT_MILLIS));
         config.setOption(NetherChannelOption.NETHER_CLIENT_MAX_HANDSHAKE_ATTEMPTS, 1);
@@ -79,13 +65,11 @@ public abstract class MixinConnection_1 {
         // ViaBedrock, added around the Via handlers ViaFabricPlus put into the pipeline before
         final ChannelPipeline pipeline = channel.pipeline();
         // Native transport liveness continues while game packets pause at resource or Store prompts.
-        // NetherNet reports the reliable data channel closing; RakNet retains its session timeout.
-        if ((channel instanceof RakClientChannel || channel instanceof NetherNetClientChannel)
-                && pipeline.get(HandlerNames.TIMEOUT) instanceof ReadTimeoutHandler) {
+        // NetherNet reports the reliable data channel closing.
+        if (channel instanceof NetherNetClientChannel && pipeline.get(HandlerNames.TIMEOUT) instanceof ReadTimeoutHandler) {
             pipeline.remove(HandlerNames.TIMEOUT);
         }
         pipeline.addBefore(HandlerNames.SPLITTER, DisconnectHandler.NAME, new DisconnectHandler());
-        pipeline.addBefore(HandlerNames.SPLITTER, MessageCodec.NAME, new MessageCodec());
         pipeline.replace(HandlerNames.SPLITTER, HandlerNames.SPLITTER, new BatchLengthCodec());
         pipeline.remove(HandlerNames.PREPENDER);
         pipeline.addBefore(ViaDecodeHandler.NAME, PacketCodec.NAME, new PacketCodec());

@@ -23,7 +23,6 @@ package com.viaversion.viafabricplus.bedrock.hud;
 
 import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.injection.access.IChunkTracker;
-import com.viaversion.viafabricplus.bedrock.injection.access.IRakSessionCodec;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +32,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.raphimc.viabedrock.protocol.storage.ChunkTracker;
-import org.cloudburstmc.netty.channel.raknet.RakClientChannel;
-import org.cloudburstmc.netty.handler.codec.raknet.common.RakSessionCodec;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
@@ -57,15 +54,6 @@ public final class BedrockDebugHudEntry implements DebugScreenEntry {
             information.add("Chunk Tracker: R: " + mixinChunkTracker.viaFabricPlusBedrock$getSubChunkRequests()
                 + ", P: " + mixinChunkTracker.viaFabricPlusBedrock$getPendingSubChunks()
                 + ", C: " + mixinChunkTracker.viaFabricPlusBedrock$getChunks());
-        }
-        if (connection.getChannel() instanceof RakClientChannel rakClientChannel) {
-            final RakSessionCodec rakSessionCodec = rakClientChannel.parent().pipeline().get(RakSessionCodec.class);
-            if (rakSessionCodec != null) {
-                final IRakSessionCodec mixinRakSessionCodec = (IRakSessionCodec) rakSessionCodec;
-                information.add("RTT: " + Math.round(rakSessionCodec.getRTT()) + " ms, P: " + rakSessionCodec.getPing() + " ms"
-                    + ", TQ: " + mixinRakSessionCodec.viaFabricPlusBedrock$getOutgoingPackets()
-                    + ", RTQ: " + mixinRakSessionCodec.viaFabricPlusBedrock$getSentDatagrams());
-            }
         }
 
         if (!information.isEmpty()) {

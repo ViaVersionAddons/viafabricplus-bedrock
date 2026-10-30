@@ -21,17 +21,14 @@
 
 package com.viaversion.viafabricplus.bedrock.injection.mixin.core.integration;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
+import com.viaversion.viafabricplus.ViaFabricPlus;
 import com.viaversion.viafabricplus.bedrock.ViaFabricPlusBedrock;
 import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetAddressParser;
-import com.viaversion.viafabricplus.bedrock.protocoltranslator.network.NetherNetHttpAddress;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.viaversion.viafabricplus.injection.access.core.IServerData;
+import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import java.net.URI;
-import java.net.SocketAddress;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -59,16 +56,17 @@ public abstract class MixinServerStatusPinger {
     @Inject(method = "pingServer", at = @At("HEAD"), cancellable = true)
     private void pingNetherNet(final ServerData data, final Runnable onPersistentDataChange, final Runnable onPongResponse,
                                final EventLoopGroupHolder eventLoopGroupHolder, final CallbackInfo ci) {
-        if (!BedrockProtocolVersion.BEDROCK_LATEST.equals(((IServerData) data).viaFabricPlus$forcedVersion())) {
-            return;
-        }
-        final SocketAddress address = NetherNetAddressParser.parse(data.ip);
-        if (address == null) {
+        final IServerData mixinServerData = (IServerData) data;
+        // Mirrors how ViaFabricPlus picks the version of the ping connection
+        final ProtocolVersion version = mixinServerData.viaFabricPlus$forcedVersion() != null && !mixinServerData.viaFabricPlus$passedDirectConnectScreen()
+            ? mixinServerData.viaFabricPlus$forcedVersion()
+            : ViaFabricPlus.api().targetVersion();
+        if (!BedrockProtocolVersion.BEDROCK_LATEST.equals(version)) {
             return;
         }
         ci.cancel();
         data.playerList = List.of();
-        if (!(address instanceof NetherNetHttpAddress httpAddress)) {
+        if (NetherNetAddressParser.parse(data.ip) != null) {
             data.motd = Component.translatable("bedrock_nethernet.viafabricplus.status_unavailable");
             data.status = Component.empty();
             data.setState(ServerData.State.SUCCESSFUL);
@@ -76,12 +74,13 @@ public abstract class MixinServerStatusPinger {
             return;
         }
 
+        final ServerAddress address = ServerAddress.parseString(ViaFabricPlusBedrock.impl().settings().replaceDefaultPort(data.ip, version));
         data.motd = Component.translatable("multiplayer.status.pinging");
         data.setState(ServerData.State.PINGING);
         final long start = System.nanoTime();
         final URI uri;
         try {
-            uri = new URI("http", null, httpAddress.host(), httpAddress.port(), "/v1/join", null, null);
+            uri = new URI("http", null, address.getHost(), address.getPort(), "/v1/join", null, null);
         } catch (Exception exception) {
             data.setState(ServerData.State.UNREACHABLE);
             return;
@@ -116,12 +115,6 @@ public abstract class MixinServerStatusPinger {
                 }
                 onPongResponse.run();
             }, Minecraft.getInstance());
-    }
-
-    @WrapOperation(method = "pingServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/resolver/ServerAddress;parseString(Ljava/lang/String;)Lnet/minecraft/client/multiplayer/resolver/ServerAddress;"))
-    private ServerAddress replaceDefaultPort(final String input, final Operation<ServerAddress> original, @Local(argsOnly = true) final ServerData data) {
-        // Replaces the port when pinging a server with a forced version
-        return original.call(ViaFabricPlusBedrock.impl().settings().replaceDefaultPort(input, ((IServerData) data).viaFabricPlus$forcedVersion()));
     }
 
 }
