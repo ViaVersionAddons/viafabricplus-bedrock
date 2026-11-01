@@ -42,6 +42,6 @@
   "depends": {
     "minecraft": "${mcVersion}",
     "java": ">=25",
-    "viafabricplus": ">=5.0.2"
+    "viafabricplus": ">=5.1.3"
   }
 }
