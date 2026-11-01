@@ -43,14 +43,6 @@ public abstract class MixinServerListsScreen extends VFPPopup {
 
     @Shadow
     @Final
-    private static int BUTTON_WIDTH;
-
-    @Shadow
-    @Final
-    private static int BUTTON_HEIGHT;
-
-    @Shadow
-    @Final
     private static int BUTTON_MARGIN;
 
     protected MixinServerListsScreen(final Component title, final int bodyWidth, final int bodyHeight) {
@@ -59,15 +51,15 @@ public abstract class MixinServerListsScreen extends VFPPopup {
 
     @Inject(method = "initBody", at = @At("TAIL"))
     private void addBedrockServerLists(final ScreenRectangle body, final CallbackInfo ci) {
-        final int x = body.left() + (body.width() - BUTTON_WIDTH) / 2;
-        final int y = body.top() + BUTTON_MARGIN + 2 * (BUTTON_HEIGHT + BUTTON_MARGIN); // Below ViaFabricPlus' own server lists
+        final int x = body.left() + (body.width() - Button.BIG_WIDTH) / 2;
+        final int y = body.top() + BUTTON_MARGIN + 2 * (Button.DEFAULT_HEIGHT + BUTTON_MARGIN); // Below ViaFabricPlus' own server lists
         this.viaFabricPlusBedrock$addServerList(BedrockRealmsScreen.TITLE, () -> new BedrockRealmsScreen().open(this.prevScreen), x, y);
-        this.viaFabricPlusBedrock$addServerList(BedrockFriendsScreen.TITLE, () -> new BedrockFriendsScreen().open(this.prevScreen), x, y + BUTTON_HEIGHT + BUTTON_MARGIN);
+        this.viaFabricPlusBedrock$addServerList(BedrockFriendsScreen.TITLE, () -> new BedrockFriendsScreen().open(this.prevScreen), x, y + Button.DEFAULT_HEIGHT + BUTTON_MARGIN);
     }
 
     @Unique
     private void viaFabricPlusBedrock$addServerList(final Component title, final Runnable open, final int x, final int y) {
-        final Button.Builder builder = Button.builder(title, _ -> open.run()).pos(x, y).size(BUTTON_WIDTH, BUTTON_HEIGHT);
+        final Button.Builder builder = Button.builder(title, _ -> open.run()).pos(x, y).size(Button.BIG_WIDTH, Button.DEFAULT_HEIGHT);
         final boolean missingAccount = ViaFabricPlusBedrock.impl().account().get() == null; // Only check for presence, later validate
         if (missingAccount) {
             builder.tooltip(Tooltip.create(Component.translatable("bedrock_realms.viafabricplus.warning")));
