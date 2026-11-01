@@ -32,5 +32,5 @@ dependencies {
 
 ## Contact
 
-- Issues: https://github.com/florianreuth/viafabricplus-bedrock/issues
+- Issues: https://github.com/ViaVersionAddons/viafabricplus-bedrock/issues
 - Discord: https://florianreuth.de/discord

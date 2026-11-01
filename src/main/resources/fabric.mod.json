@@ -17,14 +17,14 @@
     {
       "name": "GitHub contributors",
       "contact": {
-        "homepage": "https://github.com/florianreuth/viafabricplus-bedrock/graphs/contributors"
+        "homepage": "https://github.com/ViaVersionAddons/viafabricplus-bedrock/graphs/contributors"
       }
     }
   ],
   "contact": {
     "homepage": "https://florianreuth.de/",
-    "sources": "https://github.com/florianreuth/viafabricplus-bedrock",
-    "issues": "https://github.com/florianreuth/viafabricplus-bedrock/issues",
+    "sources": "https://github.com/ViaVersionAddons/viafabricplus-bedrock",
+    "issues": "https://github.com/ViaVersionAddons/viafabricplus-bedrock/issues",
     "email": "florian@florianreuth.de"
   },
   "license": "GPL-v3",
